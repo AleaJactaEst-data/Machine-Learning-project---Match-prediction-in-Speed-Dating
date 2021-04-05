@@ -1,0 +1,119 @@
+---
+title: "Dating_data : la data qui vous date"
+author: "Le super groupe de travaille fada de MACHINE LEARNINNNNNNG"
+date: "26/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("dplyr")
+```
+
+```{r}
+df = read.csv("Speed Dating Data.csv")
+```
+
+# Ouverture du dataset 
+
+```{r}
+df
+dim(df)
+```
+
+# Suppression colonne inutile 
+
+```{r}
+#Reste a supprimer : career, (apres nettoyage)
+df = df %>% select(-c("positin1","position"))
+```
+
+# Nettoyage du dataset
+
+```{r}
+#Gestion des non diplomés
+df$undergra = as.character(df$undergra)
+df$undergra[which(df$undergra=="")] = "other"
+df$undergra = factor(df$undergra)
+
+#Gestion des indices metiers
+#Si career : lawyer alors career_c : 1
+df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
+
+#Si career : Economist alors career_c : 7 (with Finance...)
+df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
+
+#Si career : tech professional  alors career_c : 7 (with Finance...)
+df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
+
+#Suppression des autres individus : quasiment toutes leurs variables sont nulles
+to_delete = df$career_c %>% is.na %>% which
+df = df[!seq_len(nrow(df)) %in% to_delete, ]
+
+df %>% select(c("career_c","career"))
+```
+
+
+#Gestion des valeurs manquantes 
+
+#(1800): attr4_1...shar4_2 : doit-on les supprimer ou les remplaces ?
+#Relation lineaire car la somme vaut 100
+
+#(3500): attr5_1...shar5_2 : doit-on les supprimer ou les remplaces ?
+#Relation lineaire car la somme vaut 100
+
+#NA de match_es : créer une variable binaire qui indique 1 si NA et voir correlation avec autre variable
+
+#attr1_s ... amb1_s : 4400 NA values
+
+#attr7_2 ... amb7_2 : 6394 NA values
+
+#attr4_2 ... amb2_2 : 2603 NA values
+
+#attr2_2 ... amb2_2 : 2603 NA values
+
+#attr5_2 ... amb5_2 : 4001 NA values
+
+#numdat_3 : 6882
+
+#num_in_3 : 7710
+
+#attr7_3 ... amb7_3 : 6382
+
+#fun4_3 ... : 5419
+
+#Ce que tu cherches chez l'autre + temporalité
+
+#Ce que tu penses que ton sexe cherche chez l'autre + temporalité
+
+#Ce que tu penses de toi
+
+
+```{r}
+#install.packages("stringr", dependencies=TRUE)
+library(stringr)
+```
+```{r}
+
+# code pour gérer l'écriture US des chiffres (virgule des milliers)
+
+income_ = as.character(factor(df$income)) # on convertit en charcter les valeurs
+
+for(i in 1:dim(df)[1]){
+  string = income_[i] # on prend notre character
+  id  = nchar(string) - 6 # l'indice où est la virgule
+  if(id>0 & !is.na(id)){
+      str_sub(string, id, id) <- "" # on remplace la virgule par rien
+  }
+  income_[i] = string
+}
+
+df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
+df
+```
+
+
+
+
+
+

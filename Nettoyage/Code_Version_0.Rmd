@@ -18,8 +18,11 @@ library("keras")
 library("tensorflow")
 ```
 
+# Base de donnée
+
+
 ```{r}
-df = read.csv("C:/Users/xgodw/Desktop/4GM/Apprentissage_statistique/Projet - Speed Dating/Speed Dating Data.csv")
+df = read.csv("../Speed Dating Data.csv")
 ```
 
 

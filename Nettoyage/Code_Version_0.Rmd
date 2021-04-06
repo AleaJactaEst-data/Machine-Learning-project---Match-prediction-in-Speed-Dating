@@ -12,13 +12,14 @@ library("stringr")
 library("caret")
 library(utils)
 library(e1071)
+library(ggplot2)
 
 library("keras")
 library("tensorflow")
 ```
 
 ```{r}
-df = read.csv("Speed Dating Data.csv")
+df = read.csv("C:/Users/xgodw/Desktop/4GM/Apprentissage_statistique/Projet - Speed Dating/Speed Dating Data.csv")
 ```
 
 
@@ -170,7 +171,7 @@ for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
 # creation de la base pour merge
 
 ```{r}
-df_couple_id = df2[,c('iid','pid', 'match', 'int_corr')] # samerace a garder ? non on le recrée après
+df_couple_id = df2[,c('iid','pid', 'match')] # samerace a garder ? non on le recrée après
 
 
 coupleDated = c()
@@ -199,7 +200,7 @@ remove(coupleDated, i, id, iid, ligneAenlever, listeASupp, m,pid,strCouple,strCo
 
 ```{r}
 df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
- ```
+```
 
 # visualisation des différents DataSet
 
@@ -322,7 +323,7 @@ remove(var)
 
 # Visualisation des densités
 ```{r}
-var = df_couple2$amb4_avg_moy
+var = df_couple2$distance
 ggplot(df_couple2, aes(x=var, color=match)) + geom_density()
 ```
 
@@ -336,13 +337,13 @@ varSignificatifs = c("age_moy" , "age_ect" , "imprace_moy" , "dining_moy" ,
     "sinc5_avg_moy" , "intel1_avg_moy" , "intel2_avg_moy" , "intel5_avg_moy" , 
     "intel5_avg_ect" , "fun1_avg_moy" , "fun3_avg_moy" , "fun3_avg_ect" , 
     "fun5_avg_moy" , "amb4_avg_moy" , "shar2_avg_moy" , "same_field_cd","date_7" , "date_5" , "date_3" , "date_6" , "same_go_out" , 
-    "go_out_1","go_out_3" , "go_out_6" , "career_c_1" , "career_c_7" , 
+    "go_out_1","go_out_3"  , "career_c_1" , "career_c_7" , 
     "career_c_6","career_c_5" , "career_c_12" , "career_c_13", "field_cd_5" , "field_cd_9" , "field_cd_11" , 
     "field_cd_4" , "field_cd_6" , "field_cd_10" , "field_cd_15" , "same_race" , 
     "race_4" , "race_2", "match", "distance")
 
 
-df_mod = df_couple2[,which(names(df_couple_2) %in% varSignificatifs)]
+df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
 n = nrow(df_couple2)
 set.seed(1234)
 perm <- sample(1:n, 3000)
@@ -362,8 +363,8 @@ dtest <- df_mod[-perm,]
 # Essai du modèle
 
 ```{r}
-best_mod_real = glm(formula = match ~ .  , family = binomial(link = logit), 
-    data = dapp)
+best_mod_real = glm(formula = match ~ ., family = binomial(link = logit), 
+    data = dapp) 
 
 pred_best = predict(best_mod_real, newdata = dtest, type = "response")
 
@@ -372,29 +373,13 @@ pred_best = predict(best_mod_real, newdata = dtest, type = "response")
 pred_best[order(pred_best)][0:round(0.70*nrow(dtest))]=0 # je mets à 0 les plus petits
 pred_best[order(pred_best)][(round(0.70*nrow(dtest))+1):nrow(dtest)]=1 # je mets à 1 les plus grands
 
-sum(pred_best != dtest$match)/nrow(dtest) # 21%
-sum(pred_best != dtest$match & dtest$match == 1)/sum(as.numeric(dtest$match)-1) #♠ 0.67
+print(caret::confusionMatrix(data=factor(pred_best),reference=dtest$match,positive="1"))
+```
 
-```
-```{r}
-remove(n, perm,dapp, dtest)
-```
-################################################ TEST SVM  #################################################""
+# TEST SVM
 
 
 ```{r}
-df_mod = df_couple2[,-which(names(df_couple2) %in% varListe)]
-df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs_2)]
-#df_mod = df_mod[,c(1,2:160)]
-
-
-n = nrow(df_couple2)
-set.seed(1234)
-perm <- sample(1:n, 3000)
-
-dapp <- df_mod[perm,]
-dtest <- df_mod[-perm,]
-
 
 # on teste differents paramètres pour mieux les choisir (c'est long)
 tune.svm_ <- tune(
@@ -410,36 +395,26 @@ tune.svm_
 # meilleur param pour radial > cost = 69 (0.15) > gamma = 0.02
 ```
 
-```{r} 
 # test tout seul d'un svm
 
-df_mod = df_couple2[,-which(names(df_couple2) %in% varListe)]
-df_mod = df_couple2[,which(names(df_couple2) %in% c('match','int_corr'))]
-#df_mod = df_mod[,c(1,2:160)]
 
-n = nrow(df_couple2)
-set.seed(1234)
-perm <- sample(1:n, 3000)
+```{r} 
 
-dapp <- df_mod[perm,]
-dtest <- df_mod[-perm,]
 
-mod.svm <- svm(match~distance+same_field_cd+shar2_avg_moy+amb4_avg_moy+fun1_avg_moy+sinc4_avg_moy+age_ect,data=dapp,kernel="linear", cost=100000)
+mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=10000)
 #mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
 
-```
 
-```{r}
 # resultat sur le modèle svm tester
 pred.svm = predict(mod.svm, newdata = dtest)
-sum(pred.svm != dtest$match)/nrow(dtest) # 0.27
-sum(pred.svm != dtest$match & dtest$match == 1)/sum(as.numeric(dtest$match)-1) # 0.69
+print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
+
 ```
 
 
-################################################################ Intelligence artificielle ########################################################
+# Intelligence artificielle
 
 # Creation des bases de test et d'apprentissage
 
@@ -494,7 +469,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 12
+  gamma = 15
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -546,9 +521,6 @@ history <- model %>% fit(
 predSimple <- model %>% predict_classes(Xtest)
 #print(table(predSimple))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(Ytest),positive="1"))
-
-sum(predSimple != dtest$match)/nrow(dtest) #0.22 / 0.26 / 0.3 / 0.23
-sum(predSimple != dtest$match & dtest$match == 1)/sum(dtest$match) #0.77 / 0.76 / 0.57 / 0.7
 ```
 
 

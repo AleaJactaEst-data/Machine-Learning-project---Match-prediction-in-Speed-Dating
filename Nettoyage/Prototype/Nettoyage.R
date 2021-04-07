@@ -1,5 +1,5 @@
 importation=function(){
-  df = read.csv("Speed Dating Data.csv")
+  df = read.csv("../../DataBase/Speed Dating Data.csv")
   # titr1 -------------------------------------------------------------------
   
   df = df %>% select(-c("positin1","position", "expnum","exphappy"))

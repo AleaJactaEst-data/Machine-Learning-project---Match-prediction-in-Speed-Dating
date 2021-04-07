@@ -471,7 +471,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 13 # 14, ca ne fonctionne plus ? comment amelirer le resultat, surechantillonage ?
+  gamma = 7.5 # 10, ca ne fonctionne plus ? comment amelirer le resultat, surechantillonage ?
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -493,14 +493,20 @@ focal_loss=function(y_true, y_pred){
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
-  layer_dense(units = ncol, input_shape = c(ncol), activation = "relu") %>%
-layer_dropout(0.4)  %>%
+  layer_dense(units = ncol,  activation = "relu") %>%
+layer_dropout(0.2)  %>%
+  layer_dense(units = round(ncol*0.9), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.9), activation = "relu") %>%
+layer_dropout(0.2)  %>%
+  layer_dense(units = round(ncol*0.8), activation = "relu") %>%
+layer_dropout(0.2)  %>%
   layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
   layer_dense(units = round(ncol*0.7), activation = "relu") %>%
-layer_dropout(0.3)  %>%
+  
+layer_dropout(0.2)  %>%
   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-layer_dropout(0.3)  %>%
+layer_dropout(0.2)  %>%
   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
 layer_dropout(0.2)  %>%
@@ -521,7 +527,7 @@ model %>% compile(
 
 history <- model %>% fit(
   xtrain,  ytrain, 
-  batch_size =0.1,epochs = 1000,
+  batch_size =0.1,epochs = 5000,
   validation_split = 0.2
 )
 

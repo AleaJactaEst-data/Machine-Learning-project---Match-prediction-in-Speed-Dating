@@ -471,7 +471,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 10
+  gamma = 12
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")

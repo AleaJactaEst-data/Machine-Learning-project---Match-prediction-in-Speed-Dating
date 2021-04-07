@@ -18,21 +18,17 @@ library("keras")
 library("tensorflow")
 ```
 
-# Base de donnée
 
+
+# Base de donnée et Ouverture du dataset 
 
 
 ```{r}
 df = read.csv("../DataBase/Speed Dating Data.csv")
-```
-
-
-# Ouverture du dataset 
-
-```{r}
 df
 dim(df)
 ```
+
 
 # Suppression colonne inutile 
 

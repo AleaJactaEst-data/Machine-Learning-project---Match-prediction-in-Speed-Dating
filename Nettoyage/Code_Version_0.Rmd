@@ -471,7 +471,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 3.8 # 3.8 a 7.5 # 5 et 7.5
+  gamma = 3.8 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")

@@ -23,7 +23,7 @@ library("tensorflow")
 
 
 ```{r}
-df = read.csv("../Speed Dating Data.csv")
+df = read.csv("../Data/Speed Dating Data.csv")
 ```
 
 

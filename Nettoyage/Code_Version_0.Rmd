@@ -344,6 +344,8 @@ varSignificatifs = c("age_moy" , "age_ect" , "imprace_moy" , "dining_moy" ,
 
 
 df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
+#☻df_mod =df_couple2
+
 n = nrow(df_couple2)
 set.seed(1234)
 perm <- sample(1:n, 3000)
@@ -469,7 +471,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 15
+  gamma = 8
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -491,13 +493,16 @@ focal_loss=function(y_true, y_pred){
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
-    layer_dense(units = ncol, input_shape = c(ncol), activation = "linear") %>%
-  layer_dropout(0.4)  %>%
-    layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
+  layer_dense(units = ncol, input_shape = c(ncol), activation = "relu") %>%
+layer_dropout(0.4)  %>%
+  layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.7), activation = "relu") %>%
 layer_dropout(0.3)  %>%
-    layer_dense(units = ncol, input_shape = c(ncol), activation = "relu") %>%
-  layer_dropout(0.2)  %>%
-    layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+layer_dropout(0.2)  %>%
+  layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
+layer_dropout(0.2)  %>%
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
@@ -506,7 +511,7 @@ layer_dropout(0.3)  %>%
 ```{r}
 model %>% compile(
   loss = focal_loss,
-  optimizer = optimizer_rmsprop(),
+  optimizer = 'adam',#optimizer_rmsprop()
   metrics = f1_m
 )
 

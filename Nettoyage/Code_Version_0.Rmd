@@ -471,7 +471,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 8
+  gamma = 10
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -502,6 +502,7 @@ layer_dropout(0.3)  %>%
   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
 layer_dropout(0.2)  %>%
   layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
 layer_dropout(0.2)  %>%
   layer_dense(units = 1, activation = "sigmoid")
 ```

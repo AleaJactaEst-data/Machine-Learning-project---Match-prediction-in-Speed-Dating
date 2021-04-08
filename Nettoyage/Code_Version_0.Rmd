@@ -42,26 +42,13 @@ df = df %>% dplyr::select(-c("positin1","position", "expnum","exphappy"))
 
 ```{r}
 #Gestion des non diplomés
-df$undergra = as.character(df$undergra)
-df$undergra[which(df$undergra!="")] = 1
-df$undergra[which(df$undergra=="")] = 0
-df$undergra = factor(df$undergra)
+df = gestionUndergra(df)
 
 #Gestion des indices metiers
-#Si career : lawyer alors career_c : 1
-df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
+df = gestionCareer(df)
 
-#Si career : Economist alors career_c : 7 (with Finance...)
-df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
-
-#Si career : tech professional  alors career_c : 7 (with Finance...)
-df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
-
-#Suppression des autres individus : quasiment toutes leurs variables sont nulles
-to_delete = df$career_c %>% is.na %>% which
-df = df[!seq_len(nrow(df)) %in% to_delete, ]
-
-df %>% dplyr::select(c("career_c","career"))
+#gestion de Income (numeric)
+df = gestionIncome(df)
 ```
 
 
@@ -80,60 +67,15 @@ numdat_3 : 6882, num_in_3 : 7710, attr7_3 ... amb7_3 : 6382, fun4_3 ... : 5419
 
 Solution regrouper les variables
 
-# gestion de income
-```{r}
-# code pour gérer l'écriture US des chiffres (virgule des milliers)
-
-income_ = as.character(factor(df$income)) # on convertit en character les valeurs
-
-for(i in 1:dim(df)[1]){
-  string = income_[i] # on prend notre character
-  id  = nchar(string) - 6 # l'indice où est la virgule
-  if(id>0 & !is.na(id)){
-      str_sub(string, id, id) <- "" # on remplace la virgule par rien
-  }
-  income_[i] = string
-}
-
-df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
-remove(income_,string,to_delete,id,i)
-```
 
 # agreger les variables
 ```{r} 
-df2=df
-# CODE POUR GERER LE REGROUPEMENT DE VARIABLE
-attribut=c("attr","sinc","intel","fun","amb","shar")
-time=c(as.character(1:3),"s")
-catg=c(1:5,7)
+df2 = agregationVariable(df)
 
-var_gen=outer(attribut,outer(catg,paste0("_",time),paste0),paste0)
-var_avg=outer(attribut,outer(catg,"_avg",paste0),paste0)
-
-#Etape 1 : harmoniser le systeme de point
-for(k in c(1,2,4)){#theme qui ont besoin d'être harmonisé
-  for(i in 1:4){
-    if(all(var_gen[,k,i]%in%names(df2))){
-     df2[,var_gen[,k,i]]=sapply(var_gen[,k,i],function(v) 100*df2[,v]/apply(df2[,var_gen[,k,i]],1,sum,na.rm = T)) 
-    }
-  }
-}
-
-#ETAPE2 : regroupement
-for(k in 1:6){#catg/
-  for(i in 1:6){#attribut
-    v=var_gen[i,k,][which(var_gen[i,k,]%in%names(df2))]
-    df2[,var_avg[i,k,1]]= apply(df2[,v],1,mean,na.rm = T)
-  }
-}
-
-#ETAPE3 : Supression des anciennes variables
-v=as.vector(var_gen)
-v=v[which(v%in%names(df2))]
-df2=df2[,-which(names(df2)%in%v)]
-
-remove(attribut, catg, i, k, time, v, var_avg, var_gen)
+length(df2$fun5_avg[which(df2$match == 1 & is.na(df2$sinc5_avg)) ])/length(df2$fun5_avg[which(df2$match == 1) ])
+length(df2$fun5_avg[which(df2$match == 0 & is.na(df2$sinc5_avg)) ])/length(df2$fun5_avg[which(df2$match == 0) ])
 ```
+
 
 # creation de df_individu
 ```{r} 
@@ -142,59 +84,32 @@ df_individu = df2[!duplicated(df2[,c('iid')]),]
 listeASupp = c('id','idg','round','wave','order','condtn','int_corr','partner','pid', 'match','samerace','match_es','dec',
 'age_o','race_o', 'pf_o_sin','pf_o_int','pf_o_fun','pf_o_amb','pf_o_sha','dec_o', 'sinc_o','attr_o', 'intel_o','fun_o','amb_o','shar_o','like_o','prob_o','met_o','pf_o_att',
 'attr','sinc','intel','fun','amb','shar','like','prob','met',
-'you_call','them_cal','length', 'date_3', 'numdat_3', 'num_in_3','numdat_2', 'satis_2','positin1','position', 'expnum',
+'you_call','them_cal','length', 'date_3', 'numdat_3', 'num_in_3','numdat_2', 'satis_2',
 'attr7_avg','sinc7_avg','intel7_avg','fun7_avg','amb7_avg','shar7_avg','shar3_avg','shar5_avg',
 "field","mn_sat","tuition","from","zipcode","career","income")
 
 
 
-df_individu = df_individu[,-which(names(df2) %in% listeASupp)]
+df_individu = df_individu %>% dplyr::select(-listeASupp)
 ```
 
 # gestion des NA \ remplacement par la moyenne et supression d'individu
 
 ```{r} 
-for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
-  id = which(is.na(df_individu[,var]))
-  m = mean(df_individu[-id,var])
-  df_individu[id,var] = m
-}
+df_individu = gestionDesNASystematiques(df_individu)
 
 for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
   id = which(is.na(df_individu[,var]))
-  if(length(id)>0){
+    if(length(id)>0){
       df_individu = df_individu[-id,]
-  }
+    }
 }
-
 ```
 
 # creation de la base pour merge
 
 ```{r}
-df_couple_id = df2[,c('iid','pid', 'match')] # samerace a garder ? non on le recrée après
-
-
-coupleDated = c()
-ligneAenlever = c()
-
-for(i in 1:dim(df_couple_id)[1]){
-  iid = df_couple_id$iid[i]
-  pid = df_couple_id$pid[i]
-  
-  strCouple = paste(as.character(iid),as.character(pid))
-  strCoupleInv = paste(as.character(pid),as.character(iid))
-  
-  if(!(strCoupleInv %in% coupleDated)){
-    coupleDated = c(coupleDated,strCouple)
-  }
-  else{
-    ligneAenlever = c(ligneAenlever,i)
-  }
-}
-df_couple_id= df_couple_id[-ligneAenlever,]
-
-remove(coupleDated, i, id, iid, ligneAenlever, listeASupp, m,pid,strCouple,strCoupleInv, var)
+df_couple_id = creationDf_Couple_Id(df2)
 ```
 
 #creation de df_couple en mergeant
@@ -212,71 +127,18 @@ df_couple_id
 df_couple
 #na de individus
 var_na=sapply(names(df_individu),function(x) sum(is.na(df_individu[,x])))
-barplot(var_na[var_na>0])
+barplot(var_na[var_na>0]) # bug car il n'y a plus de NA
+
 ```
 
-# transormation des val numérique .x et . y en moyenne et ecart
+# ajout en plus des val numérique .x et . y  des moyennes et ecarts
 
 ```{r}
-df_couple2=df_couple
-#on devrait supprimer c(field,undergra,mn_sat,"tuition","from","zipcode","career","income")
-
-
-var_num=c("age","imprace","imprelig",
-          "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
-          paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
-          )
-var_qual=c("gender","undergra", "field_cd","race", "goal","date","go_out","career_c")
-
-
-#Supression ordre variables numerique
-for(v in var_num){
-  df_couple2[,paste0(v,"_moy")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,mean,na.rm=F)
-  df_couple2[,paste0(v,"_ect")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) abs(x[1]-x[2]))
-  df_couple2 = df_couple2 %>%dplyr::select(-paste0(v,c(".x",".y")))
-
-}
-
-
-#Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
-for( v in var_qual){
-  v_modalite=unique(df_individu[,v])
-  #indicatrice same
-  df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
-  #comptage
-  for(mod in v_modalite){
-    if(is.na(mod)){
-      df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) is.na(x[1])+is.na(x[2]))
-    }
-    else{
-      df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
-    }
-  }
-}
-
-#Variable qualitative Solution2: couple de modalite
-# library(utils)
-# for( v in var_qual){
-#   print(v)
-#   df_couple2[is.na(df_couple2[,paste0(v,".x")]),paste0(v,".x")]="NA"
-#   df_couple2[is.na(df_couple2[,paste0(v,".y")]),paste0(v,".y")]="NA"
-#   
-#   unique_moda=unique(c(unique(df_couple2[,paste0(v,".x")]),unique(df_couple2[,paste0(v,".y")])))
-#   couple_modalite=rbind(t(combn(unique_moda,2)),cbind(unique_moda,unique_moda))
-#   
-#   df_couple2[,paste0(v,"_couple")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,
-#         function(x){
-#           ordre1=x[1]==couple_modalite[,1] & x[2]==couple_modalite[,2] 
-#           ordre2=x[1]==couple_modalite[,2] & x[2]==couple_modalite[,1]
-#           #check que cela ne correspond qu'a une ligne
-#           paste0(couple_modalite[ordre1 | ordre2,],collapse = "_")
-#         }
-#   )
-# }
-
-for(v in var_qual){
-  df_couple2 = df_couple2 %>% dplyr::select(-paste0(v,c(".x",".y")))
-}
+res = creation_avg_ect(df_couple)
+df_couple2 = res$df
+varNum = res$var_num
+varFactor = c(res$var_qual, "match")
+remove(res)
 ```
 
 # creation d'une variable distance (moyenne des écarts)
@@ -286,35 +148,25 @@ liste_ect =c("imprace_ect","imprelig_ect","sports_ect","tvsports_ect","exercise_
 "clubbing_ect","reading_ect","tv","theater_ect","movies_ect","concerts_ect","music_ect","shopping_ect","yoga_ect",
           paste0("attr",1:5,"_avg_ect"),paste0("sinc",1:5,"_avg_ect"),paste0("intel",1:5,"_avg_ect"),paste0("fun",1:5,"_avg_ect"),paste0("amb",1:5,"_avg_ect"),paste0("shar",c(1,2,4),"_avg_ect"))
 
-j = sapply(1:nrow(df_couple2), function(i) sum(df_couple2[i,which(names(df_couple2) %in% liste_ect)])/ length(df_couple2[i,which(names(df_couple2) %in% liste_ect)]))
+j = sapply(1:nrow(df_couple2), function(i) sqrt(sum(df_couple2[i,which(names(df_couple2) %in% liste_ect)]^2)))
 
 
 df_couple2 <- df_couple2 %>%
     mutate(distance = j)
 
-remove(mod, v, v_modalite, var_num, var_qual, j, liste_ect)
+remove(mod, v, v_modalite,  j, liste_ect, var_na, id, listeASupp, var)
 ```
 
-# Passage en factor
-
-```{r}
-varFactor = c('same_undergra', 'undergra_1','undergra_0',paste0("field_cd_",1:18), "same_field_cd", "same_race",paste0("field_cd_",1:6), "same_goal", paste0("goal_",1:6), "same_date", paste0("date_",1:7),"race_1","race_2","race_3","race_4","race_6", "same_go_out", paste0("go_out_",1:7), "same_career_c", paste0("career_c_",1:17), "match" )
-
-for(var in varFactor){
-  if(var %in% names(df_couple2)){
-      df_couple2[,var] = as.factor(df_couple2[,var])
-
-  }
-}
-```
 
 # normalisation des donnees
 ```{r}
+
+df_couple2$match = as.factor(df_couple2$match)
+
 for(var in names(df_couple2)){
-  if(!(var %in% varFactor)){
-    if(var %in% names(df_couple2)){
-      df_couple2[,var] = (df_couple2[,var]-mean(df_couple2[,var]))/sd(df_couple2[,var])
-    }
+  if(!is.factor(df_couple2[1,var])){
+    df_couple2[,var] = (df_couple2[,var]-mean(df_couple2[,var]))/sd(df_couple2[,var])
+    
   }
 }
 
@@ -325,7 +177,7 @@ remove(var)
 # Visualisation des densités
 ```{r}
 var = df_couple2$distance
-ggplot(df_couple2, aes(x=var, color=match)) + geom_density()
+ggplot(df_couple2, aes(x=var, color=factor(match))) + geom_density()
 ```
 
 # Création des échantillons test et d'apprentissage avec les var significatifs > df_mod
@@ -344,29 +196,22 @@ varSignificatifs = c("age_moy" , "age_ect" , "imprace_moy" , "dining_moy" ,
     "race_4" , "race_2", "match", "distance")
 
 
-varSignificatifs2 = c( "age_ect" , "imprace_moy" , "dining_moy" ,
-    "museums_moy" , "art_moy" ,  "clubbing_moy", "sport_moy", "exercice_moy"  , 
-    "attr1_avg_moy" ,   
-     "attr4_avg_moy" ,  "attr5_avg_moy",  "sinc4_avg_moy" , 
-     "intel1_avg_moy" ,  
-     "fun1_avg_moy" , "fun3_avg_moy" ,  
-     "amb4_avg_moy" , "shar2_avg_moy" , "same_field_cd","same_date" ,  "same_go_out" , 
-      
-     "same_race" , 
-    "race_4" , "race_2", "match", "distance")
+varXGBoost = c( "same_career_c", "date_2"      ,     "career_c_3"    ,  "career_c_10",   "go_out_2"   ,  "career_c_7"    ,   "go_out_4"   ,   "career_c_2" ,  "career_c_12"  ,
+ "date_4"       ,     "date_5"       ,   "field_cd_10"  ,   "career_c_6"   ,
+ "field_cd_16" ,  "goal.x"         ,   "race_2"   ,        
+ "date.x"     ,      
+ "field_cd_15" ,  "go_out_5" ,       "movies_moy"  ,   "shar4_avg_ect" , "clubbing_ect"  , "music_moy"   ,   "hiking_moy" ,   
+ "sinc2_avg.y"  ,  "exercise.y"   ,  "fun4_avg.y"  ,   "amb3_avg_ect"  , "intel4_avg_ect" ,"theater.x" ,     "fun2_avg.x"   ,  "dining.x"   ,   
+ "sinc2_avg_ect" , "tv_ect"      ,   "reading_moy"  ,  "theater.y"    ,  "attr1_avg.y"  ,  "hiking.x" ,      "intel3_avg.y" , "match", "distance")
 
 
-#varListe = c("id", "pid", "go_out_6", "same_gender", paste0("field_cd_",1:18),paste0("career_c_",1:17),paste0("go_out_",1:7), "sports_ect","tvsports_ect","exercise_ect","dining_ect","museums_ect","art_ect","hiking_ect","gaming_ect","clubbing_ect","reading_ect","tv_ect","theater_ect","movies_ect","concerts_ect","music_ect","shopping_ect","yoga_ect",paste0("attr",1:5,"_avg_ect"),paste0("sinc",1:5,"_avg_ect"),paste0("intel",1:5,"_avg_ect"),paste0("fun",1:5,"_avg_ect"),paste0("amb",1:5,"_avg_ect"),paste0("shar",c(1,2,4),"_avg_ect"), "intel5_avg_moy", "fun5_avg_moy", "attr5_avg_moy", "shar5_avg_moy", "amb5_avg_moy", "intel_aveg_moy", "fun4_avg_moy", "attr4_avg_moy", "shar4_avg_moy", "undergra_0", "undergra_1", "gender_0", "gender_1" )
+varSupp = c("gender.x", "gender.y","id", "pid", "go_out_6", "same_gender")
 
-df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
-df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
-
-n = nrow(df_couple2)
-set.seed(1234)
-perm <- sample(1:n, 3000)
-
-dapp <- df_mod[perm,]
-dtest <- df_mod[-perm,]
+# si on veut pas renseigner varSignificatifs, varSupp >> ne rien mettre
+res = creationDesData(df_couple2, varSignificatifs = varXGBoost, varSupp =  varSupp, noFactor = FALSE)
+df_mod = res$df_mod
+dapp = res$dapp
+dtest = res$dtest
 ```
 
 # Modèle Logistique
@@ -380,15 +225,14 @@ dtest <- df_mod[-perm,]
 # Essai du modèle
 
 ```{r}
-best_mod_real = glm(formula = match ~ ., family = binomial(link = logit), 
-    data = dapp) 
+best_mod_real = glm(formula = match ~ ., family = binomial(link = logit), data = dapp) 
 
 pred_best = predict(best_mod_real, newdata = dtest, type = "response")
 
 # Le but est de prendre les 16% meilleur score est de mettre leur valeur à 1
 # pour dire qu'il y a match
-pred_best[order(pred_best)][0:round(0.70*nrow(dtest))]=0 # je mets à 0 les plus petits
-pred_best[order(pred_best)][(round(0.70*nrow(dtest))+1):nrow(dtest)]=1 # je mets à 1 les plus grands
+pred_best[order(pred_best)][0:round(0.80*nrow(dtest))]=0 # je mets à 0 les plus petits
+pred_best[order(pred_best)][(round(0.80*nrow(dtest))+1):nrow(dtest)]=1 # je mets à 1 les plus grands
 
 print(caret::confusionMatrix(data=factor(pred_best),reference=dtest$match,positive="1"))
 ```
@@ -418,7 +262,7 @@ tune.svm_
 ```{r} 
 
 
-mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=10000)
+mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=1000000000000000000000000000000000000000000000)
 #mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
@@ -437,29 +281,17 @@ print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
 
 ```{r}
 #df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
-df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs2)]
+#0df_mod = df_couple2[,which(names(df_couple2) %in% c("age_ect", "same_race", "same_goal", "same_field_cd", "distance", "imprace_moy", "imprelig_moy", "sport_moy","intel1_avg_moy" , "fun1_avg_moy", "match"))]
 
 #df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
 # utilisation de rose pour de meilleur résultats
 df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
 
-for(var in varFactor){
-  if(var %in% names(df_mod)){
-      df_mod[,var] = as.numeric(df_mod[,var]) -1
-  }
-}
-remove(var)
+res = creationDesData(df_mod, noFactor = TRUE)
+df_mod = res$df_mod
+dapp = res$dapp
+dtest = res$dtest
 
-df_mod[,which(names(df_mod) %in% varFactor)] = df_mod[,which(names(df_mod) %in% varFactor)] -1
-df_mod$match = df_mod$match + 1
-
-
-n = nrow(df_mod)
-set.seed(12489)
-perm <- sample(1:n, 3000)
-
-dapp <- df_mod[perm,]
-dtest <- df_mod[-perm,]
 
 ncol = ncol(dapp) - 1 
 
@@ -532,12 +364,12 @@ layer_dropout(0.3)  %>%
 #   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
 #   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
 # layer_dropout(0.2)  %>%
-#   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-#   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-# layer_dropout(0.2)  %>%
-#   layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
-#   layer_dense(units = round(ncol*0.3), activation ="relu") %>%
-# layer_dropout(0.1)  %>%
+  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+layer_dropout(0.2)  %>%
+  layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
+layer_dropout(0.1)  %>%
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
@@ -552,7 +384,7 @@ model %>% compile(
 
 history <- model %>% fit(
   xtrain,  ytrain, 
-  batch_size =0.1,epochs = 2000,
+  batch_size =0.1,epochs = 500,
   validation_split = 0.1
 )
 

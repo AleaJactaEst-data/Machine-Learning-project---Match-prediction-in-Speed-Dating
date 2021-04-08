@@ -13,6 +13,7 @@ library("caret")
 library(utils)
 library(e1071)
 library(ggplot2)
+library(ROSE)
 
 library("keras")
 library("tensorflow")
@@ -343,8 +344,22 @@ varSignificatifs = c("age_moy" , "age_ect" , "imprace_moy" , "dining_moy" ,
     "race_4" , "race_2", "match", "distance")
 
 
+varSignificatifs2 = c( "age_ect" , "imprace_moy" , "dining_moy" ,
+    "museums_moy" , "art_moy" ,  "clubbing_moy", "sport_moy", "exercice_moy"  , 
+    "attr1_avg_moy" ,   
+     "attr4_avg_moy" ,  "attr5_avg_moy",  "sinc4_avg_moy" , 
+     "intel1_avg_moy" ,  
+     "fun1_avg_moy" , "fun3_avg_moy" ,  
+     "amb4_avg_moy" , "shar2_avg_moy" , "same_field_cd","same_date" ,  "same_go_out" , 
+      
+     "same_race" , 
+    "race_4" , "race_2", "match", "distance")
+
+
+#varListe = c("id", "pid", "go_out_6", "same_gender", paste0("field_cd_",1:18),paste0("career_c_",1:17),paste0("go_out_",1:7), "sports_ect","tvsports_ect","exercise_ect","dining_ect","museums_ect","art_ect","hiking_ect","gaming_ect","clubbing_ect","reading_ect","tv_ect","theater_ect","movies_ect","concerts_ect","music_ect","shopping_ect","yoga_ect",paste0("attr",1:5,"_avg_ect"),paste0("sinc",1:5,"_avg_ect"),paste0("intel",1:5,"_avg_ect"),paste0("fun",1:5,"_avg_ect"),paste0("amb",1:5,"_avg_ect"),paste0("shar",c(1,2,4),"_avg_ect"), "intel5_avg_moy", "fun5_avg_moy", "attr5_avg_moy", "shar5_avg_moy", "amb5_avg_moy", "intel_aveg_moy", "fun4_avg_moy", "attr4_avg_moy", "shar4_avg_moy", "undergra_0", "undergra_1", "gender_0", "gender_1" )
+
 df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
-#☻df_mod =df_couple2
+df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
 
 n = nrow(df_couple2)
 set.seed(1234)
@@ -421,6 +436,13 @@ print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
 # Creation des bases de test et d'apprentissage
 
 ```{r}
+#df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
+df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs2)]
+
+#df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
+# utilisation de rose pour de meilleur résultats
+df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
+
 for(var in varFactor){
   if(var %in% names(df_mod)){
       df_mod[,var] = as.numeric(df_mod[,var]) -1
@@ -463,15 +485,18 @@ precision_m=function(y_true, y_pred){
   predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
   precision = true_positives / (predicted_positives + k_epsilon())
   return(precision)
-} 
+}
+
+# parametre beta a changer
 f1_m=function(y_true, y_pred){
+  beta = 1
   precision = precision_m(y_true, y_pred)
   recall = recall_m(y_true, y_pred)
-  return(2*((precision*recall)/(precision+recall+k_epsilon())))
+  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 3.8 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
+  gamma = 7.3 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -495,40 +520,40 @@ model %>%
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dense(units = ncol,  activation = "relu") %>%
 layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.9), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.9), activation = "relu") %>%
-layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.8), activation = "relu") %>%
-layer_dropout(0.25)  %>%
-  layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.7), activation = "relu") %>%
+#   layer_dense(units = round(ncol*0.9), activation = "sigmoid") %>%
+#   layer_dense(units = round(ncol*0.9), activation = "relu") %>%
+# layer_dropout(0.3)  %>% # trouver l'influence des drop out
+#   layer_dense(units = round(ncol*0.8), activation = "relu") %>%
+# layer_dropout(0.25)  %>%
+#   layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
+#   layer_dense(units = round(ncol*0.7), activation = "relu") %>%
   
-layer_dropout(0.25)  %>%
-  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-layer_dropout(0.25)  %>%
-  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-layer_dropout(0.25)  %>%
-  layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-layer_dropout(0.15)  %>%
+# layer_dropout(0.2)  %>%
+#   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
+#   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+# layer_dropout(0.2)  %>%
+#   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
+#   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+# layer_dropout(0.2)  %>%
+#   layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
+#   layer_dense(units = round(ncol*0.3), activation ="relu") %>%
+# layer_dropout(0.1)  %>%
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
 
 # compilation, apprentissage et prédiction
-```{r}
+```{r, results = 'hide'}
 model %>% compile(
-  loss = focal_loss,
+  loss = 'binary_crossentropy',
   optimizer = 'adam',#optimizer_rmsprop()
-  metrics = f1_m
+  metrics = 'accuracy'
 )
 
 history <- model %>% fit(
   xtrain,  ytrain, 
   batch_size =0.1,epochs = 2000,
-  validation_split = 0.2
+  validation_split = 0.1
 )
 
 

@@ -345,6 +345,7 @@ focal_loss=function(y_true, y_pred){
 
 ```
 
+
 # creation du modèle
 ```{r}
 model <- keras_model_sequential()
@@ -352,40 +353,40 @@ model %>%
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dense(units = ncol,  activation = "relu") %>%
 layer_dropout(0.3)  %>%
-#   layer_dense(units = round(ncol*0.9), activation = "sigmoid") %>%
-#   layer_dense(units = round(ncol*0.9), activation = "relu") %>%
-# layer_dropout(0.3)  %>% # trouver l'influence des drop out
-#   layer_dense(units = round(ncol*0.8), activation = "relu") %>%
-# layer_dropout(0.25)  %>%
-#   layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
-#   layer_dense(units = round(ncol*0.7), activation = "relu") %>%
+  layer_dense(units = round(ncol*0.9), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.9), activation = "relu") %>%
+layer_dropout(0.3)  %>%
+  layer_dense(units = round(ncol*0.8), activation = "relu") %>%
+layer_dropout(0.25)  %>%
+  layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.7), activation = "relu") %>%
   
-# layer_dropout(0.2)  %>%
-#   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-#   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-# layer_dropout(0.2)  %>%
+layer_dropout(0.25)  %>%
   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
   layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-layer_dropout(0.2)  %>%
+layer_dropout(0.25)  %>%
+  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+layer_dropout(0.25)  %>%
   layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
-layer_dropout(0.1)  %>%
+  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
+layer_dropout(0.15)  %>%
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
 
 # compilation, apprentissage et prédiction
-```{r, results = 'hide'}
+```{r}
 model %>% compile(
-  loss = 'binary_crossentropy',
+  loss = focal_loss,
   optimizer = 'adam',#optimizer_rmsprop()
-  metrics = 'accuracy'
+  metrics = f1_m
 )
 
 history <- model %>% fit(
   xtrain,  ytrain, 
-  batch_size =0.1,epochs = 500,
-  validation_split = 0.1
+  batch_size =0.1,epochs = 2000,
+  validation_split = 0.2
 )
 
 
@@ -394,6 +395,7 @@ predSimple <- model %>% predict_classes(Xtest)
 #print(table(predSimple))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(Ytest),positive="1"))
 ```
+
 
 
 Différentes lignes de commande pour les modeles de Machine Learning

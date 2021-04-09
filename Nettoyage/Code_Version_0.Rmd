@@ -200,8 +200,8 @@ p + scale_x_discrete(limits=rownames(temp)[id]) + coord_flip()
 
 
 
-varRandom_1 = rownames(temp)[which(temp > mean(temp))]
-varRandom_2 = rownames(temp)[which(temp > mean(temp) + sd(temp))]
+varRandom_1 = c(rownames(temp)[which(temp > mean(temp))], "match")
+varRandom_2 = c(rownames(temp)[which(temp > mean(temp) + sd(temp))], "match")
 ```
 
 # variable significatif Boosting
@@ -210,8 +210,8 @@ varRandom_2 = rownames(temp)[which(temp > mean(temp) + sd(temp))]
 mod_boost = gbm(match~.,data=df_couple2,distribution="adaboost",interaction.depth=2,shrinkage=0.1,n.trees=500)
 res = summary(mod_boost)
 
-varBoost_1 = as.character(res$var[which(res$rel.inf > mean(res$rel.inf))])
-varBoost_2 = as.character(res$var[which(res$rel.inf > mean(res$rel.inf) + sd(res$rel.inf))])
+varBoost_1 = c(as.character(res$var[which(res$rel.inf > mean(res$rel.inf))]), "match")
+varBoost_2 = c(as.character(res$var[which(res$rel.inf > mean(res$rel.inf) + sd(res$rel.inf))]), "match")
 ```
 # Création des échantillons test et d'apprentissage avec les var significatifs > df_mod
 ```{r}
@@ -228,7 +228,7 @@ varXGBoost = c( "same_career_c", "date_2"      ,     "career_c_3"    ,  "career_
 varSupp = c("gender.x", "gender.y","id", "pid", "go_out_6", "same_gender")
 
 # si on veut pas renseigner varSignificatifs, varSupp >> ne rien mettre
-res = creationDesData(df_couple2, varSignificatifs = varXGBoost, varSupp =  varSupp, noFactor = FALSE)
+res = creationDesData(df_couple2, varSignificatifs = varBoost_2, varSupp =  varSupp, noFactor = FALSE)
 df_mod = res$df_mod
 dapp = res$dapp
 dtest = res$dtest
@@ -251,40 +251,23 @@ pred_best = predict(best_mod_real, newdata = dtest, type = "response")
 
 # Le but est de prendre les 16% meilleur score est de mettre leur valeur à 1
 # pour dire qu'il y a match
-pred_best[order(pred_best)][0:round(0.80*nrow(dtest))]=0 # je mets à 0 les plus petits
-pred_best[order(pred_best)][(round(0.80*nrow(dtest))+1):nrow(dtest)]=1 # je mets à 1 les plus grands
+pred_best[order(pred_best)][0:round(0.70*nrow(dtest))]=0 # je mets à 0 les plus petits
+pred_best[order(pred_best)][(round(0.70*nrow(dtest))+1):nrow(dtest)]=1 # je mets à 1 les plus grands
 
 print(caret::confusionMatrix(data=factor(pred_best),reference=dtest$match,positive="1"))
 ```
 
-# TEST SVM
 
-
-```{r}
-
-# on teste differents paramètres pour mieux les choisir (c'est long)
-"""
-tune.svm_ <- tune(
-  svm, match~.,
-  data = dapp, 
-  ranges = list( cost = seq(68.1,69,0.2), gamma = seq(0.017,0.025,0.002), kernel = c("radial")),
-  tunecontrol = tune.control(sampling = "fix"),
-  validation.x = dtest[,-1],
-  validation.y = dtest$match
-)
-
-tune.svm_
-"""
-# meilleur param pour radial > cost = 69 (0.15) > gamma = 0.02
-```
-
-# test tout seul d'un svm
+# svm
 
 
 ```{r} 
 
+ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
 
-mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=1000000000000000000000000000000000000000000000)
+tune_grid <- expand.grid(cost=c(10,100,500,1000),gamma = seq(0.1,1,0.1), kernel = c("radial", "polynomial", "sigmoid"))
+
+mod.svm <- train(match ~., data = dapp, method = "svm",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"), metric = "F1")
 #mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)

@@ -265,9 +265,9 @@ print(caret::confusionMatrix(data=factor(pred_best),reference=dtest$match,positi
 
 ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
 
-tune_grid <- expand.grid(cost=c(10,100,500,1000),gamma = seq(0.1,1,0.1))
+tune_grid <- expand.grid(C=c(10,100,500,1000), sigma = seq(0.1,1,0.1))
 
-mod.svm <- train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"), metric = "F1")
+mod.svm <- train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "YeoJohnson"), metric = "F1")
 #mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=100)
 #mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)

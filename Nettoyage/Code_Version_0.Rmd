@@ -90,7 +90,7 @@ listeASupp = c('id','idg','round','wave','order','condtn','int_corr','partner','
 
 
 
-df_individu = df_individu %>% dplyr::select(-listeASupp)
+df_individu = df_individu %>% dplyr::select(-all_of(listeASupp))
 ```
 
 # gestion des NA \ remplacement par la moyenne et supression d'individu
@@ -169,6 +169,7 @@ for(var in names(df_couple2)){
     
   }
 }
+df_couple2 = df_couple2[,-which(names(df_couple2) %in% c("gender.x", "gender.y", "go_out_6", "id", "pid"))]
 
 remove(var)
 ```
@@ -179,22 +180,41 @@ remove(var)
 var = df_couple2$distance
 ggplot(df_couple2, aes(x=var, color=factor(match))) + geom_density()
 ```
+# variable significatif RandomForest
+```{r}
+rf_mod = randomForest::randomForest(match~., data = df_couple2)
 
+id = order(rf_mod$importance)
+temp = rf_mod$importance
+bar = cbind.data.frame(rownames(temp),temp )
+
+colnames(bar) = c("Var", "MeanDecreaseGini")
+
+library(ggplot2)
+# Barplot basique
+p<-ggplot(data=bar, aes(x=Var, y=MeanDecreaseGini)) +
+  geom_bar(stat="identity")
+
+# Barplot horizontal
+p + scale_x_discrete(limits=rownames(temp)[id]) + coord_flip()
+
+
+
+varRandom_1 = rownames(temp)[which(temp > mean(temp))]
+varRandom_2 = rownames(temp)[which(temp > mean(temp) + sd(temp))]
+```
+
+# variable significatif Boosting
+```{r}
+
+mod_boost = gbm(match~.,data=df_couple2,distribution="adaboost",interaction.depth=2,shrinkage=0.1,n.trees=500)
+res = summary(mod_boost)
+
+varBoost_1 = as.character(res$var[which(res$rel.inf > mean(res$rel.inf))])
+varBoost_2 = as.character(res$var[which(res$rel.inf > mean(res$rel.inf) + sd(res$rel.inf))])
+```
 # Création des échantillons test et d'apprentissage avec les var significatifs > df_mod
 ```{r}
-varSignificatifs = c("age_moy" , "age_ect" , "imprace_moy" , "dining_moy" ,
-    "museums_moy" , "art_moy" , "art_ect" , "clubbing_moy" , "reading_ect" , 
-    "tv_moy" , "tv_ect" , "movies_moy" , "concerts_moy" , "shopping_moy" , 
-    "attr1_avg_moy" , "attr1_avg_ect" , "attr2_avg_ect" , "attr3_avg_moy" , 
-    "attr3_avg_ect" , "attr4_avg_moy" , "attr4_avg_ect" , "attr5_avg_moy", "sinc2_avg_ect" , "sinc4_avg_moy" , 
-    "sinc5_avg_moy" , "intel1_avg_moy" , "intel2_avg_moy" , "intel5_avg_moy" , 
-    "intel5_avg_ect" , "fun1_avg_moy" , "fun3_avg_moy" , "fun3_avg_ect" , 
-    "fun5_avg_moy" , "amb4_avg_moy" , "shar2_avg_moy" , "same_field_cd","date_7" , "date_5" , "date_3" , "date_6" , "same_go_out" , 
-    "go_out_1","go_out_3"  , "career_c_1" , "career_c_7" , 
-    "career_c_6","career_c_5" , "career_c_12" , "career_c_13", "field_cd_5" , "field_cd_9" , "field_cd_11" , 
-    "field_cd_4" , "field_cd_6" , "field_cd_10" , "field_cd_15" , "same_race" , 
-    "race_4" , "race_2", "match", "distance")
-
 
 varXGBoost = c( "same_career_c", "date_2"      ,     "career_c_3"    ,  "career_c_10",   "go_out_2"   ,  "career_c_7"    ,   "go_out_4"   ,   "career_c_2" ,  "career_c_12"  ,
  "date_4"       ,     "date_5"       ,   "field_cd_10"  ,   "career_c_6"   ,
@@ -243,6 +263,7 @@ print(caret::confusionMatrix(data=factor(pred_best),reference=dtest$match,positi
 ```{r}
 
 # on teste differents paramètres pour mieux les choisir (c'est long)
+"""
 tune.svm_ <- tune(
   svm, match~.,
   data = dapp, 
@@ -253,6 +274,7 @@ tune.svm_ <- tune(
 )
 
 tune.svm_
+"""
 # meilleur param pour radial > cost = 69 (0.15) > gamma = 0.02
 ```
 
@@ -285,7 +307,8 @@ print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
 
 #df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
 # utilisation de rose pour de meilleur résultats
-df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
+res = creationDesData(df_couple2, varSignificatifs = varXGBoost, varSupp =  varSupp, noFactor = FALSE)
+df_mod = res$df_mod
 
 res = creationDesData(df_mod, noFactor = TRUE)
 df_mod = res$df_mod
@@ -328,7 +351,7 @@ f1_m=function(y_true, y_pred){
 } 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 7.3 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
+  gamma = 5.3 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")

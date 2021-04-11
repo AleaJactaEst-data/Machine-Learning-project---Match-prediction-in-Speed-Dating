@@ -15,6 +15,7 @@ library(e1071)
 library(ggplot2)
 library(ROSE)
 library(MLmetrics)
+library(gbm)
 
 library("keras")
 library("tensorflow")
@@ -273,7 +274,7 @@ dtest = res$dtest
 
 ctrl <- trainControl(method = "cv", savePredictions = TRUE, summaryFunction = f1)
 
-tune_grid <- expand.grid(C=c(2000, 5000, 10000, 100000), sigma = seq(0.01,0.4,0.05))
+tune_grid <- expand.grid(C=c(2000, 5000, 10000, 100000), sigma = seq(0.01,0.2,0.03))
 
 mod.svm_ <- caret::train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,preProcess = c("scale", "YeoJohnson"), metric = "F1")
 #mod.svm <- svm(match~.,data=dapp,kernel="radial", cost=100)
@@ -320,7 +321,7 @@ ytest = dtest$match
 
 ```{r echo = TRUE, eval=FALSE, include=FALSE, results = 'hide'}
 # resultat pour gamma = 
-res = optimisationNeuroneDeeplearning(0.1, 20, 0.5, 500, xtrain, xtest,ytrain, ytest);
+res = optimisationNeuroneDeeplearning(4.8, 5.2, 0.1, 800, xtrain, xtest,ytrain, ytest);
 #res = optimisationNeuroneDeeplearning(0.2, 4, 0.1, 700, xtrain, xtest,ytrain, ytest); # >> 0.2 et 3.5 
 #res_0.2 = optimisationNeuroneDeeplearning(0.05, 0.3, 0.03, 700, xtrain, xtest,ytrain, ytest); # >> 0.05, 0.14 c'est allé jusqu'à 0.41
 #res_3.5 = optimisationNeuroneDeeplearning(3.4, 3.6, 0.02, 700, xtrain, xtest,ytrain, ytest);
@@ -333,7 +334,7 @@ res = optimisationNeuroneDeeplearning(0.1, 20, 0.5, 500, xtrain, xtest,ytrain, y
 
 
 focal_loss=function(y_true, y_pred){
-  gamma = 3.5 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
+  gamma = 5.1 # 3.8 a 7.5 fonctionne > test - amelioration surechantilonage
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -355,8 +356,8 @@ focal_loss=function(y_true, y_pred){
 ```{r}
 model <- keras_model_sequential()
 model %>% 
-  layer_dense(units = (ncol)*0.8, input_shape = c(ncol), activation = "sigmoid") %>%
-  layer_dense(units = ncol,  activation = "relu") %>%
+  layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.8),  activation = "relu") %>%
 layer_dropout(0.2)  %>%
   layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
   layer_dense(units = round(ncol*0.7), activation = "relu") %>%
@@ -381,7 +382,7 @@ layer_dropout(0.1)  %>%
 
 
 # compilationf, apprentissage et prédiction
-```{r}
+```{r,  results = 'hide', message=FALSE, paged.print=FALSE, eval=FALSE, include=FALSE}
 model %>% compile(
   loss = focal_loss,
   optimizer = 'adam',#optimizer_rmsprop()
@@ -390,11 +391,11 @@ model %>% compile(
 
 history <- model %>% fit(
   xtrain,  ytrain, 
-  batch_size =0.1,epochs = 1000,
+  batch_size =0.1,epochs = 5000,
   validation_split = 0.2
 )
-
-
+```
+```{r}
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest)
 #print(table(predSimple))

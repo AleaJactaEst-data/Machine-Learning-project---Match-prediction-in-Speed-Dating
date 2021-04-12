@@ -297,26 +297,31 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     model <- keras_model_sequential()
     model %>% 
       layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.8),  activation = "relu") %>%
       layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.7), activation = "relu") %>%
       layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.6), activation = "relu") %>%
       layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.6), activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.6), activation = "relu") %>%
-      
-      layer_dropout(0.15)  %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.4), activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.4), activation ="relu") %>%
-      layer_dropout(0.15)  %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.4), activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.3), activation ="relu") %>%
-      layer_dropout(0.15)  %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = round(ncol*0.15), activation ="relu") %>%
-      layer_dropout(0.1)  %>%
+      layer_dropout(0.2)  %>%
       layer_dense(units = 1, activation = "sigmoid")
     
     model %>% compile(
@@ -327,8 +332,8 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     
     history <- model %>% fit(
       xtrain,  ytrain, 
-      batch_size =0.1,epochs = epoch,
-      validation_split = 0.2,
+      batch_size =0.05,epochs = epoch,
+      validation_split = 0.15,
       view_metrics = FALSE
     );
     

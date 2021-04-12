@@ -296,22 +296,21 @@ print(caret::confusionMatrix(data=pred.svm_,reference=dtest$match,positive="1"))
 ```{r}
 #df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
 #0df_mod = df_couple2[,which(names(df_couple2) %in% c("age_ect", "same_race", "same_goal", "same_field_cd", "distance", "imprace_moy", "imprelig_moy", "sport_moy","intel1_avg_moy" , "fun1_avg_moy", "match"))]
-
 #df_mod =df_couple2[,-which(names(df_couple2) %in% varListe)]
 # utilisation de rose pour de meilleur résultats
+
 res = creationDesData(df_couple2, varSignificatifs = c(varXGBoost, varBoost_1, varRandom_1), varSupp =  varSupp, noFactor = FALSE)
 df_mod = res$df_mod
+
 
 res = creationDesData(df_mod, noFactor = TRUE)
 df_mod = res$df_mod
 dapp = res$dapp
 dtest = res$dtest
-
-
 ncol = ncol(dapp) - 1 
-
 xtrain = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
 ytrain = dapp$match
+
 
 xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest = dtest$match
@@ -325,6 +324,7 @@ res = optimisationNeuroneDeeplearning(0.1, 12, 0.3, 700, xtrain, xtest,ytrain, y
 #res = optimisationNeuroneDeeplearning(0.2, 4, 0.1, 700, xtrain, xtest,ytrain, ytest); # >> 0.2 et 3.5 
 #res_0.2 = optimisationNeuroneDeeplearning(0.05, 0.3, 0.03, 700, xtrain, xtest,ytrain, ytest); # >> 0.05, 0.14 c'est allé jusqu'à 0.41
 #res_3.5 = optimisationNeuroneDeeplearning(3.4, 3.6, 0.02, 700, xtrain, xtest,ytrain, ytest);
+
 ```
 
 
@@ -332,9 +332,9 @@ res = optimisationNeuroneDeeplearning(0.1, 12, 0.3, 700, xtrain, xtest,ytrain, y
 
 ```{r}
 
-
 focal_loss=function(y_true, y_pred){
   gamma = 1
+
   print("gamma")
   pt = y_pred * y_true + (1-y_pred) * (1-y_true)
   print("pt")
@@ -348,14 +348,13 @@ focal_loss=function(y_true, y_pred){
   print(loss)
   return(loss)
 }
-
 ```
-
 
 # creation du modèle
 ```{r}
 model <- keras_model_sequential()
 model %>% 
+
   layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.1)  %>%
   layer_dense(units = round(ncol*0.8),  activation = "relu") %>%
@@ -382,32 +381,34 @@ model %>%
   layer_dropout(0.1)  %>%
   layer_dense(units = round(ncol*0.15), activation ="relu") %>%
   layer_dropout(0.1)  %>%
+
   layer_dense(units = 1, activation = "sigmoid")
 ```
 
 
-# compilationf, apprentissage et prédiction
-```{r echo = TRUE, eval=FALSE, include=FALSE, results = 'hide'}
-model %>% compile(
-  loss = focal_loss,
-  optimizer = 'adam',#optimizer_rmsprop()
-  metrics = f1_m
-)
 
+# compilatiof, apprentissage et prédiction
+```{r echo = TRUE, eval=FALSE, include=FALSE, results = 'hide'}
+
+model %>% compile(
+  loss = 'binary_crossentropy',
+  optimizer = 'adam',#optimizer_rmsprop()
+  metrics = 'accuracy'
+)
 history <- model %>% fit(
   xtrain,  ytrain, 
+
   batch_size =0.05,epochs = 2000,
   validation_split = 0.2
 )
 ```
 ```{r}
+
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest)
 #print(table(predSimple))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1"))
 ```
-
-
 
 Différentes lignes de commande pour les modeles de Machine Learning
 

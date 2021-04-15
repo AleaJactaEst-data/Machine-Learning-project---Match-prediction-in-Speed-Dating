@@ -279,7 +279,19 @@ creation_same_ind=function(df_couple2){
 }
 
 
-
+feature_selection=function(df_couple,var_num,var_qual2){
+  var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)
+  var_num_sign=var_num_sign[order(var_num_sign)]
+  
+  
+  #sigificativite cramer
+  var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
+  
+  var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)
+  var_qual_sign=var_qual_sign[order(var_qual_sign)]
+  
+  return(c("match",names(c(var_qual_sign,var_num_sign))))
+}
 
 # creation de df_mod, dapp et dtest
 

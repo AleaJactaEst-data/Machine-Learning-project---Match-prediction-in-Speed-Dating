@@ -95,8 +95,70 @@ agregationVariable = function(df){
 }
 
 
+aggregateCarrer=function(df_individu){
+  #carrer_cd
+  law=c(1)
+  science=c(4,5,12)
+  huma=c(3,9,11,13,16)
+  art=c(6,17)
+  business=c(7,8)
+  chercheur=c(2)
+  sportif=c(14)
+  autre=c(10,15)
+  
+  df_individu$career_c2=8
+  df_individu$career_c2[df_individu$career_c%in%law]=1 #inutile mais bon
+  df_individu$career_c2[df_individu$career_c%in%science]=2
+  df_individu$career_c2[df_individu$career_c%in%huma]=3
+  df_individu$career_c2[df_individu$career_c%in%art]=4
+  df_individu$career_c2[df_individu$career_c%in%business]=5
+  df_individu$career_c2[df_individu$career_c%in%chercheur]=6
+  df_individu$career_c2[df_individu$career_c%in%sportif]=7
+  
+  return(df_individu)
+}
+
+aggregateField=function(df_individu){
+  #field_cd
+  law=c(1)
+  science=c(2,4,5,10)
+  huma=c(3,6,7,16,13,9)
+  art=c(14,15,17)
+  business=c(8)
+  autre=c(12,17)
+  
+  df_individu$field_cd2=6
+  df_individu$field_cd2[df_individu$field_cd%in%law]=1 #inutile mais bon
+  df_individu$field_cd2[df_individu$field_cd%in%science]=2
+  df_individu$field_cd2[df_individu$field_cd%in%huma]=3
+  df_individu$field_cd2[df_individu$field_cd%in%art]=4
+  df_individu$field_cd2[df_individu$field_cd%in%business]=5
+  
+  return(df_individu)
+}
+
+aggregateActivitie=function(df_individu){
+  #activite1
+  df_individu$act_sports=apply(df_individu,1,function(x) mean(x[c("sports","tvsports","exercise","hiking","yoga","clubbing")],na.rm=T))
+  df_individu$act_art=apply(df_individu,1,function(x) mean(x[c("museums","art","reading","theater","movies","concerts","music")],na.rm=T))
+  df_individu$act_autre=apply(df_individu,1,function(x) mean(x[c("dining","gaming","tv","shopping")],na.rm=T))
+  
+  #activite2
+  df_individu$act_casanier=apply(df_individu,1,function(x) mean(x[c("tvsports","gaming","tv","yoga","art","reading","music","movies")],na.rm=T))
+  df_individu$act_sortie=apply(df_individu,1,function(x) mean(x[c("sports","museums","theater","concerts","exercise","hiking","clubbing","dining","shopping")],na.rm=T))
+  
+  return(df_individu)
+}
+
 # Remplissage par la moyenne
 gestionDesNASystematiques = function(df_individu){
+  
+  for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
+    id = which(is.na(df_individu[,var]))
+    if(length(id)>0){
+      df_individu = df_individu[-id,]
+    }
+  }
   
   for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
     id = which(is.na(df_individu[,var]))
@@ -112,9 +174,9 @@ gestionDesNASystematiques = function(df_individu){
 
 
 
-creationDf_Couple_Id = function(df){
-  df_couple_id = df[,c('iid','pid', 'match')] # samerace a garder ? non on le recrée après
-  
+creationDf_Couple = function(df,df_individu){
+  df_couple_id = df[,c('iid','pid', 'match',"gender")]
+  df_couple_id=df_couple_id[order(df_couple_id$gender),]
   
   coupleDated = c()
   ligneAenlever = c()
@@ -133,60 +195,88 @@ creationDf_Couple_Id = function(df){
       ligneAenlever = c(ligneAenlever,i)
     }
   }
-  df_couple_id= df_couple_id[-ligneAenlever,]
+  df_couple_id= df_couple_id[-ligneAenlever,]%>%select(-c("gender"))
   
-  return(df_couple_id)
+  df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
+  
+  
+  return(df_couple)
 }
 
 ######################################################################♠
 
 creation_avg_ect=function(df_couple2){
-
-  
-  # Var numerique -----------------------------------------------------------
-  
-  var_num=c("age","imprace","imprelig",
+  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
             "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
             paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
   )
   
-  #Supression ordre variables numerique
+  #Calcule moy et ect
   for(v in var_num){
-      df_couple2[,paste0(v,"_moy")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,mean,na.rm=F)
-      df_couple2[,paste0(v,"_ect")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) abs(x[1]-x[2]))
-      #df_couple2 = df_couple2 %>% select(-paste0(v,c(".x",".y")))
+    df_couple2[,paste0(v,"_moy")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,mean,na.rm=F)
+    df_couple2[,paste0(v,"_ect")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) abs(x[1]-x[2]))
   }
   
-  # Var qualitative ---------------------------------------------------------
+  # Calcule de distance
+  #activite
+  activite=c("sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga")
+  df_couple2$act_dist=apply(df_couple2[,paste0(activite,"_ect")]^2,1,function(x) sqrt(sum(x)))
+  #activite1
+  df_couple2$act1_dist=apply(df_couple2[,paste0(c("act_sortie","act_casanier"),"_ect")]^2,1,function(x) sqrt(sum(x)))
+  #activite2
+  df_couple2$act2_dist=apply(df_couple2[,paste0(c("act_autre","act_art","act_sports"),"_ect")]^2,1,function(x) sqrt(sum(x)))
+  
+  #Attribut
+  attribut=c("attr","sinc","intel","fun","amb","shar")
+  #Ce que tu cherches chez l'autre
+  df_couple2$attribut1_dist=apply(df_couple2[,paste0(attribut,"1_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses que les gens de sexe opposé cherchent chez l'autre
+  df_couple2$attribut2_dist=apply(df_couple2[,paste0(attribut,"2_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses de toi
+  df_couple2$attribut3_dist=apply(df_couple2[,paste0(attribut[-6],"3_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses que ton sexe cherche chez l'autre
+  df_couple2$attribut4_dist=apply(df_couple2[,paste0(attribut,"4_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que les autres pensent de toi
+  df_couple2$attribut5_dist=apply(df_couple2[,paste0(attribut[-6],"5_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  
+  df_couple2$correspondance1_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.x")]-df_couple2[,paste0(attribut[-6],"3_avg.y")])^2,
+                                        1,function(x) sqrt(sum(x)))
+  
+  df_couple2$correspondance2_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.y")]-df_couple2[,paste0(attribut[-6],"3_avg.x")])^2,
+                                        1,function(x) sqrt(sum(x)))
+  
+  
+  var_num=unlist(lapply(var_num,function(x) paste0(x,c(".x",".y","_moy","_ect"))))
+  var_num=c(var_num,"act_dist","act1_dist","act2_dist","attribut1_dist","attribut2_dist","attribut3_dist","attribut4_dist","attribut5_dist","correspondance1_dist","correspondance2_dist")
+  
+  
+  return(list("df"=df_couple2, "var_num" =  var_num))
+}
+
+creation_same_ind=function(df_couple2){
   
   var_qual=c("field_cd","race", "goal","date","go_out","career_c")
   var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
   
   
-  
   #Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
   for( v in var_qual){
-    if(v %in% df_couple2){
-      v_modalite=unique(c(df_couple2[,paste0(v,".x")],df_couple2[,paste0(v,".y")]))
-      #indicatrice same
-      var_qual2=c(var_qual2,paste0("same_",v))
-      df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
-      #comptage
-      for(mod in v_modalite){
-        var_qual2=c(var_qual2,paste0(v,"_",mod))
-        df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
-      }
+    v_modalite=unique(c(df_couple2[,paste0(v,".x")],df_couple2[,paste0(v,".y")]))
+    #indicatrice same
+    var_qual2=c(var_qual2,paste0("same_",v))
+    df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
+    #comptage
+    for(mod in v_modalite){
+      var_qual2=c(var_qual2,paste0(v,"_",mod))
+      df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
     }
-
   }
   for(var in c("match",var_qual2)){
-    if(v %in% df_couple2){
-      df_couple2[,var] = as.factor(df_couple2[,var])
-    }
+    df_couple2[,var] = as.factor(df_couple2[,var])
   }
-  return(list("df"=df_couple2, "var_num" =  var_num, "var_qual" = var_qual2 ))
+  
+  return(list("df"=df_couple2, "var_qual" =  var_qual2))
 }
-
 
 
 
@@ -224,9 +314,6 @@ creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE
   
   dapp <- df_mod[perm,]
   dtest <- df_mod[-perm,]
-  
-  
-  
   
   
   return(list(df_mod = df_mod,dapp = dapp,dtest = dtest))

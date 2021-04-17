@@ -280,11 +280,12 @@ creation_same_ind=function(df_couple2){
 
 
 feature_selection=function(df_couple,var_num,var_qual2){
+  #Numerique
   var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)
   var_num_sign=var_num_sign[order(var_num_sign)]
   
   
-  #sigificativite
+  #Qualitative
   var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
   
   var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)
@@ -296,7 +297,7 @@ feature_selection=function(df_couple,var_num,var_qual2){
 # creation de df_mod, dapp et dtest
 
 # noFactor sert pour le réseau de neurone, un réseaud de neurone ne peut pas prendre de factor
-creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE, noFactor = FALSE){
+creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE, noFactor = FALSE,p_split=0.7){
   if(length(varSignificatifs) > 1){
     df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
   }
@@ -322,8 +323,7 @@ creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE
   
   n = nrow(df_couple2)
   set.seed(1234)
-  perm <- sample(1:n, 3000)
-  
+  perm <- createDataPartition(df_mod$match, p = p_split, list = FALSE)
   dapp <- df_mod[perm,]
   dtest <- df_mod[-perm,]
   

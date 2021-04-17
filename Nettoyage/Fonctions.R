@@ -321,7 +321,6 @@ creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE
   }
   
   
-  n = nrow(df_couple2)
   set.seed(1234)
   perm <- createDataPartition(df_mod$match, p = p_split, list = FALSE)
   dapp <- df_mod[perm,]

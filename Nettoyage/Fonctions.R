@@ -284,7 +284,7 @@ feature_selection=function(df_couple,var_num,var_qual2){
   var_num_sign=var_num_sign[order(var_num_sign)]
   
   
-  #sigificativite cramer
+  #sigificativite
   var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
   
   var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)

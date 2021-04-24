@@ -279,17 +279,28 @@ creation_same_ind=function(df_couple2){
 }
 
 
-feature_selection=function(df_couple,var_num,var_qual2){
+feature_selection=function(df_couple2,var_num,var_qual2,seuil=0.05,nb_var_max=Inf){
+  if(length(seuil)==1){
+    seuil=c(seuil,seuil)
+  }
+  if(length(nb_var_max)==1){
+    seuil=c(nb_var_max,nb_var_max)
+  }
   #Numerique
   var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)
   var_num_sign=var_num_sign[order(var_num_sign)]
+  var_num_sign=var_num_sign[var_num_sign<=seuil[1]]
+  var_num_sign=var_num_sign[1:min(nb_var_max[1],length(var_num_sign))]
+  barplot(var_num_sign,main = "Test student variable numerique")
   
   
   #Qualitative
-  var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
+  #var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
   
   var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)
   var_qual_sign=var_qual_sign[order(var_qual_sign)]
+  var_qual_sign=var_qual_sign[var_qual_sign<=seuil[2]]
+  var_qual_sign=var_qual_sign[1:min(nb_var_max[2],length(var_qual_sign))]
   
   return(c("match",names(c(var_qual_sign,var_num_sign))))
 }

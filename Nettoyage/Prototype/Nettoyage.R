@@ -40,6 +40,7 @@ importation=function(){
   setTxtProgressBar(pb, 0.9)
   df_couple=creationDf_Couple(df,df_individu)
   
+  setTxtProgressBar(pb, 1)
   return(df_couple%>%select(-c("pid","iid")))
   
 }

@@ -284,7 +284,7 @@ feature_selection=function(df_couple2,var_num,var_qual2,seuil=0.05,nb_var_max=In
     seuil=c(seuil,seuil)
   }
   if(length(nb_var_max)==1){
-    seuil=c(nb_var_max,nb_var_max)
+    nb_var_max=c(nb_var_max,nb_var_max)
   }
   #Numerique
   var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)

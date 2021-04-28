@@ -341,3 +341,161 @@ creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE
   return(list(df_mod = df_mod,dapp = dapp,dtest = dtest))
   
 }
+
+
+
+optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoch, xtrain, xtest,ytrain, ytest){
+  sol = as.data.frame(c(0,0,0))
+  
+  for( i in seq(gamma_min, gamma_max, gamma_pas)){
+    focal_loss=function(y_true, y_pred){
+      gamma = i 
+      print("gamma")
+      pt = y_pred * y_true + (1-y_pred) * (1-y_true)
+      print("pt")
+      pt = k_clip(pt, 0, 1)
+      print("pt2")
+      CE = -k_log(pt+k_epsilon())
+      print("CE")
+      FL = k_pow(1-pt, gamma) * CE
+      print("FL")
+      loss = k_sum(FL, axis=1)
+      print(loss)
+      return(loss)
+    }
+    
+    model <- keras_model_sequential()
+    model %>% 
+      
+      layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+      layer_dropout(0.1)  %>%
+      layer_dense(units = round(ncol*0.8),  activation = "relu") %>%
+      layer_dropout(0.1)  %>%
+      layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
+      layer_dropout(0.1)  %>%
+      layer_dense(units = round(ncol*0.4),  activation = "relu") %>%
+      layer_dropout(0.1)  %>%
+      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+      layer_dropout(0.1)  %>%
+      layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+      layer_dropout(0.1)  %>%
+      
+      layer_dense(units = 1, activation = "sigmoid")
+    model %>% compile(
+      loss = focal_loss,
+      optimizer = 'adam',#optimizer_rmsprop()
+      metrics = f1_m
+    )
+    
+    history <- model %>% fit(
+      xtrain,  ytrain, 
+      batch_size =0.05,epochs = epoch,
+      validation_split = 0.15,
+      view_metrics = FALSE
+    );
+    
+    
+    #prédiction sur l'échantillon test
+    predSimple <- model %>% predict_classes(xtest)
+    #print(table(predSimple))
+    acc = sum(predSimple == ytest)/length(ytest)
+    sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
+    
+    sol = cbind(sol, c(i,acc,sensitivity))
+    print(c(i,acc,sensitivity))
+    
+    remove(model, history, predSimple, acc, sensitivity, focal_loss)
+  }
+  
+  return(sol)
+  
+}
+
+
+
+optimisationPoidsClasse = function(poids_min, poids_max, poids_gap, epoch, xtrain, xtest,ytrain, ytest){
+  sol = as.data.frame(c(0,0,0))
+  
+  for( i in seq(poids_min, poids_max, poids_gap)){
+    class_weight=list("0"=1/2,"1"=i/2)
+    
+    model <- keras_model_sequential()
+    model %>% 
+      
+      layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+      layer_dropout(0.3)  %>%
+      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+      layer_dropout(0.3)  %>%
+      layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+      layer_dropout(0.3)  %>%
+      
+      layer_dense(units = 1, activation = "sigmoid")
+    
+    
+    model %>% compile(
+      loss = 'binary_crossentropy',
+      optimizer = 'adam',#optimizer_rmsprop()
+      metrics = f1_m
+    )
+    
+    history <- model %>% fit(
+      xtrain,  ytrain, 
+      batch_size =0.05,epochs = epoch,
+      validation_split = 0.15,
+      view_metrics = FALSE,
+      class_weight=class_weight
+    );
+    
+    
+    #prédiction sur l'échantillon test
+    predSimple <- model %>% predict_classes(xtest)
+    #print(table(predSimple))
+    acc = sum(predSimple == ytest)/length(ytest)
+    sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
+    
+    sol = cbind(sol, c(i,acc,sensitivity))
+    print(c(i,acc,sensitivity))
+    
+    remove(model, history, predSimple, acc, sensitivity)
+  }
+  
+  return(sol)
+  
+}
+
+
+
+
+
+f1 <- function (data, lev = NULL, model = NULL) {
+  experience<<-data
+  precision <- Precision(data$pred, data$obs,positive ="1")
+  recall  <- Recall(data$pred, data$obs,positive ="1")
+  f1_val <- F1_Score(data$pred, data$obs,positive ="1")
+  resu=c("precision"=precision,"rappel"=recall,"F1"=f1_val)
+  print(resu)
+  resu
+}
+
+
+
+recall_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
+  recall = true_positives / (possible_positives + k_epsilon())
+  return(recall)
+} 
+precision_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
+  precision = true_positives / (predicted_positives + k_epsilon())
+  return(precision)
+}
+
+# parametre beta a changer
+f1_m=function(y_true, y_pred){
+  beta = 1
+  precision = precision_m(y_true, y_pred)
+  recall = recall_m(y_true, y_pred)
+  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
+} 

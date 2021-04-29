@@ -9,7 +9,8 @@ library(doSNOW)
 library(dplyr)
 library(stringr)
 library(rcompanion)
-
+library(tensorflow)
+library(keras)
 
 f1 <- function (data, lev = NULL, model = NULL) {
   experience<<-data
@@ -43,12 +44,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 # Intelligence artificielle
 
 # Creation des bases de test et d'apprentissage
-library(keras)
 
-# utilisation de rose pour de meilleur résultats
-
-#res = creationDesData(df_couple2, varSignificatifs = c(varXGBoost, varBoost_1, varRandom_1), varSupp =  varSupp, noFactor = FALSE)
-#df_mod = res$df_mod
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
@@ -144,8 +140,12 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 
 ########################### poids
 
+# utilisation de poids << la formule pour trouver les poids
+# est nb classe laplus grande / nb classe i
+# classe 0 << 1
+#classe 1 << 6.0284857571
 
-#res = optimisationPoidsClasse(2, 20, 0.3, 800, xtrain, xtest,ytrain, ytest)
+#res = optimisationPoidsClasse(2, 20, 0.3, 800, xtrain, xtest,ytrain, ytest) sert a rien
 
 
 model <- keras_model_sequential()
@@ -153,10 +153,10 @@ model %>%
   
   layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%#a enlever
-  layer_dropout(0.3)  %>%#a enlever
-  layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%#a enlever
-  layer_dropout(0.3)  %>%# a enlever
+  #layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%#a enlever
+  #layer_dropout(0.3)  %>%#a enlever
+  #layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%#a enlever
+  #layer_dropout(0.3)  %>%# a enlever
   layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
   layer_dense(units = round(ncol*0.15), activation ="relu") %>%
@@ -168,7 +168,7 @@ model %>%
 
 model %>% compile(
   loss = 'binary_crossentropy',
-  optimizer = 'adam',#optimizer_rmsprop()
+  optimizer = 'adam',
   metrics = 'accuracy'
   
 )
@@ -177,7 +177,7 @@ history <- model %>% fit(
   
   batch_size =0.05,epochs = 300,
   validation_split = 0.2,
-  class_weight=list("0"=1/2,"1"=6/2) #4.77 cool 
+  class_weight=list("0"=1,"1"=6.0284857571) #4.77 cool / 6 tres cool
 )
 
 

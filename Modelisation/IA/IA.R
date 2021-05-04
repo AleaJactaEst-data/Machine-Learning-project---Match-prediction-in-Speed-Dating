@@ -94,9 +94,9 @@ focal_loss=function(y_true, y_pred){
 
 model <- keras_model_sequential()
 model %>% 
-  
   layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
+  layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
   layer_dense(units = round(ncol*0.15), activation ="relu") %>%
   layer_dropout(0.3)  %>%
@@ -165,7 +165,6 @@ history <- model %>% fit(
 
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest)
-#print(table(predSimple))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 
 
@@ -238,7 +237,7 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_rose,  ytrain_rose, 
-  batch_size =0.1,epochs = 500,
+  batch_size =0.1,epochs = 300,
   validation_split = 0.1
 )
 #prédiction sur l'échantillon test
@@ -271,7 +270,7 @@ ytrain_normal = dapp$match
 xtest_normal = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest_normal = dtest$match
 
-# base rose
+# base oversampling
 
 df_mod <- ovun.sample(match ~ ., data = df_mod, method = "over",N = 2*(nrow(df_mod) - sum(as.numeric(df_mod$match)-1)))$data
 
@@ -318,7 +317,7 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 500,
+  batch_size =0.1,epochs = 200,
   validation_split = 0.1
 )
 #prédiction sur l'échantillon test
@@ -333,41 +332,57 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 model_1 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_over_4083.hdf5")
 
-l = seq(0.15,0.7,0.01)
+l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
 f1_list
 
 meilleur_seuil_1 = l[which.max(f1_list)]
-F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil), ytest_normal, positive = "1")
+F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1), ytest_normal, positive = "1")
 
 ##################################
 
-model_2 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_rose_f1_37891.hdf5")
+model_2 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_40189_rose.hdf5")
 
-l = seq(0.15,0.7,0.01)
+l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
 f1_list
 
 meilleur_seuil_2 = l[which.max(f1_list)]
-F1_Score(as.integer(predict_proba(model_2,xtest)>meilleur_seuil), ytest, positive = "1")
+F1_Score(as.integer(predict_proba(model_2,xtest)>meilleur_seuil_2), ytest, positive = "1")
 
-################################
+##################################
 
-model_3 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_3645_poids.hdf5")
+model_3 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_4466_over.hdf5")
 
-l = seq(0.15,0.7,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_3,xtrain)>s), ytrain, positive = "1"))
+l = seq(0.35,0.95,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_3,xtrain_normal)>s), ytrain_normal, positive = "1"))
 f1_list
 
 meilleur_seuil_3 = l[which.max(f1_list)]
-F1_Score(as.integer(predict_proba(model_3,xtest)>meilleur_seuil_3), ytest_normal, positive = "1")
+F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_3), ytest_normal, positive = "1")
+
 
 ######################### combinaison
 
 
-F1_Score(as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)
-         +as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2)
-         +as.integer(predict_proba(model_3,xtest)>meilleur_seuil_3)>1.5), ytest, positive = "1")
+predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>0.5)
+                        +as.integer(predict_proba(model_2,xtest_normal)>0.5)
+                        +as.integer(predict_proba(model_3,xtest_normal)>0.5)
+                        >1.5)
 
 
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+
+# avec meilleur seuil
+
+
+predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)
+                        +as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2)
+                        +as.integer(predict_proba(model_3,xtest_normal)>meilleur_seuil_3)
+                        >1.5)
+
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 

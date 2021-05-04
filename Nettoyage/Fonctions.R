@@ -348,6 +348,7 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
   sol = as.data.frame(c(0,0,0))
   
   for( i in seq(gamma_min, gamma_max, gamma_pas)){
+    
     focal_loss=function(y_true, y_pred){
       gamma = i 
       print("gamma")
@@ -366,9 +367,9 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     
     model <- keras_model_sequential()
     model %>% 
-      
       layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
+      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
       layer_dense(units = round(ncol*0.15), activation ="relu") %>%
       layer_dropout(0.3)  %>%
@@ -378,7 +379,7 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     
     model %>% compile(
       loss = focal_loss,
-      optimizer = 'adam',#optimizer_rmsprop()
+      optimizer = 'adam',
       metrics = f1_m
     )
     
@@ -394,10 +395,9 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     predSimple <- model %>% predict_classes(xtest)
     #print(table(predSimple))
     acc = sum(predSimple == ytest)/length(ytest)
-    # sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
-    
-    df_ = data.frame("pred" = predSimple, "obs" = ytest)
-    f1_ = F1_Score(df_$pred, df_$obs, positive ="1")
+
+
+    f1_ = F1_Score(as.integer(predict_proba(model,xtest)>0.5), ytest, positive = "1")
     sol = cbind(sol, c(i,acc,f1_))
     print(c(i,acc,f1_))
     

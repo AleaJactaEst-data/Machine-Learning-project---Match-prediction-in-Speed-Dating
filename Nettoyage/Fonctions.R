@@ -368,19 +368,14 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     model %>% 
       
       layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
-      layer_dropout(0.1)  %>%
-      layer_dense(units = round(ncol*0.8),  activation = "relu") %>%
-      layer_dropout(0.1)  %>%
-      layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
-      layer_dropout(0.1)  %>%
-      layer_dense(units = round(ncol*0.4),  activation = "relu") %>%
-      layer_dropout(0.1)  %>%
-      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
-      layer_dropout(0.1)  %>%
+      layer_dropout(0.3)  %>%
+      layer_dropout(0.3)  %>%
       layer_dense(units = round(ncol*0.15), activation ="relu") %>%
-      layer_dropout(0.1)  %>%
+      layer_dropout(0.3)  %>%
       
       layer_dense(units = 1, activation = "sigmoid")
+    
+    
     model %>% compile(
       loss = focal_loss,
       optimizer = 'adam',#optimizer_rmsprop()
@@ -399,12 +394,14 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     predSimple <- model %>% predict_classes(xtest)
     #print(table(predSimple))
     acc = sum(predSimple == ytest)/length(ytest)
-    sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
+    # sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
     
-    sol = cbind(sol, c(i,acc,sensitivity))
-    print(c(i,acc,sensitivity))
+    df_ = data.frame("pred" = predSimple, "obs" = ytest)
+    f1_ = F1_Score(df_$pred, df_$obs, positive ="1")
+    sol = cbind(sol, c(i,acc,f1_))
+    print(c(i,acc,f1_))
     
-    remove(model, history, predSimple, acc, sensitivity, focal_loss)
+    remove(model, history, predSimple, acc, f1_, focal_loss)
   }
   
   return(sol)
@@ -413,55 +410,6 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 
 
 
-optimisationPoidsClasse = function(poids_min, poids_max, poids_gap, epoch, xtrain, xtest,ytrain, ytest){
-  sol = as.data.frame(c(0,0,0))
-  
-  for( i in seq(poids_min, poids_max, poids_gap)){
-    class_weight=list("0"=1/2,"1"=i/2)
-    
-    model <- keras_model_sequential()
-    model %>% 
-      
-      layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
-      layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
-      layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15), activation ="relu") %>%
-      layer_dropout(0.3)  %>%
-      
-      layer_dense(units = 1, activation = "sigmoid")
-    
-    
-    model %>% compile(
-      loss = 'binary_crossentropy',
-      optimizer = 'adam',#optimizer_rmsprop()
-      metrics = f1_m
-    )
-    
-    history <- model %>% fit(
-      xtrain,  ytrain, 
-      batch_size =0.05,epochs = epoch,
-      validation_split = 0.15,
-      view_metrics = FALSE,
-      class_weight=class_weight
-    );
-    
-    
-    #prédiction sur l'échantillon test
-    predSimple <- model %>% predict_classes(xtest)
-    #print(table(predSimple))
-    acc = sum(predSimple == ytest)/length(ytest)
-    sensitivity = sum(predSimple == ytest & ytest == 1)/length(ytest[ytest == 1])
-    
-    sol = cbind(sol, c(i,acc,sensitivity))
-    print(c(i,acc,sensitivity))
-    
-    remove(model, history, predSimple, acc, sensitivity)
-  }
-  
-  return(sol)
-  
-}
 
 
 

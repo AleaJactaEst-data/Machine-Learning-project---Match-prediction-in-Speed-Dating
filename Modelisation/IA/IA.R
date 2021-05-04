@@ -187,12 +187,12 @@ dapp <- df_mod2[perm,]
 dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
-xtrain = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
-ytrain = dapp$match
+xtrain_normal = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
+ytrain_normal = dapp$match
 
 
-xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
-ytest = dtest$match
+xtest_normal = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
+ytest_normal = dtest$match
 
 # base rose
 
@@ -242,9 +242,9 @@ history <- model %>% fit(
   validation_split = 0.1
 )
 #prédiction sur l'échantillon test
-predSimple <- model %>% predict_classes(xtest)
+predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 
 
 ################################# OverSampling  #######################
@@ -264,12 +264,12 @@ dapp <- df_mod2[perm,]
 dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
-xtrain = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
-ytrain = dapp$match
+xtrain_normal = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
+ytrain_normal = dapp$match
 
 
-xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
-ytest = dtest$match
+xtest_normal = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
+ytest_normal = dtest$match
 
 # base rose
 
@@ -322,38 +322,52 @@ history <- model %>% fit(
   validation_split = 0.1
 )
 #prédiction sur l'échantillon test
-predSimple <- model %>% predict_classes(xtest)
+predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 
 
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 
 ##################################
 
 model_1 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_over_4083.hdf5")
 
 l = seq(0.15,0.7,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_1,xtest)>s), ytest, positive = "1"))
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
 f1_list
 
-meilleur_seuil = l[which.max(f1_list)]
-F1_Score(as.integer(predict_proba(model_1,xtest)>meilleur_seuil), ytest, positive = "1")
+meilleur_seuil_1 = l[which.max(f1_list)]
+F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil), ytest_normal, positive = "1")
 
 ##################################
 
 model_2 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_rose_f1_37891.hdf5")
 
 l = seq(0.15,0.7,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_2,xtest)>s), ytest, positive = "1"))
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
 f1_list
 
-meilleur_seuil = l[which.max(f1_list)]
+meilleur_seuil_2 = l[which.max(f1_list)]
 F1_Score(as.integer(predict_proba(model_2,xtest)>meilleur_seuil), ytest, positive = "1")
 
+################################
+
+model_3 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_3645_poids.hdf5")
+
+l = seq(0.15,0.7,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_3,xtrain)>s), ytrain, positive = "1"))
+f1_list
+
+meilleur_seuil_3 = l[which.max(f1_list)]
+F1_Score(as.integer(predict_proba(model_3,xtest)>meilleur_seuil_3), ytest_normal, positive = "1")
+
+######################### combinaison
 
 
-
+F1_Score(as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)
+         +as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2)
+         +as.integer(predict_proba(model_3,xtest)>meilleur_seuil_3)>1.5), ytest, positive = "1")
 
 
 

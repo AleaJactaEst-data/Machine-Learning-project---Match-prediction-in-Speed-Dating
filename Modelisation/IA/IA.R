@@ -331,6 +331,29 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 
 ##################################
 
-l = seq(0.15,0.7,0.05)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model,xtest)>s), ytest))
+model_1 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_over_4083.hdf5")
+
+l = seq(0.15,0.7,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_1,xtest)>s), ytest, positive = "1"))
+f1_list
+
+meilleur_seuil = l[which.max(f1_list)]
+F1_Score(as.integer(predict_proba(model_1,xtest)>meilleur_seuil), ytest, positive = "1")
+
+##################################
+
+model_2 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_rose_f1_37891.hdf5")
+
+l = seq(0.15,0.7,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_2,xtest)>s), ytest, positive = "1"))
+f1_list
+
+meilleur_seuil = l[which.max(f1_list)]
+F1_Score(as.integer(predict_proba(model_2,xtest)>meilleur_seuil), ytest, positive = "1")
+
+
+
+
+
+
 

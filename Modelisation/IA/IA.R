@@ -302,10 +302,8 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 6000,
+  batch_size =0.1,epochs = 500,
   validation_split = 0.1
-  ,
-  view_metrics = FALSE
 )
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)

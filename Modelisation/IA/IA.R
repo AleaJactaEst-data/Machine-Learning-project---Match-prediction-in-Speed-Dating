@@ -25,17 +25,6 @@ f1 <- function (data, lev = NULL, model = NULL) {
   resu
 }
 
-test_model<-function(test_data,model,seuil=0.5){
-  # Testing
-  final <- data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))
-  final$predict <- ifelse(final$X0 > seuil, "0", "1")
-  caret::confusionMatrix(as.factor(final$predict), test_data$match,positive="1")
-}
-
-
-
-
-
 
 
 # Intelligence artificielle
@@ -49,16 +38,9 @@ var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual)
 
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-#df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
 
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
-
-# set.seed(1234)
-# perm <- sample(1:nrow(df_mod2),round(0.7*nrow(df_mod2)))
-# dapp <- df_mod2[perm,]
-# dtest <- df_mod2[-perm,]
 
 
 ncol = ncol(dapp) - 1 
@@ -185,15 +167,9 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 #base normale
-#df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
 
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
-# set.seed(1234)
-# perm <- sample(1:nrow(df_mod2),round(0.7*nrow(df_mod2)))
-# dapp <- df_mod2[perm,]
-# dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
 xtrain_normal = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
@@ -208,15 +184,10 @@ ytest_normal = dtest$match
 df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
 resu=creationDesData(df_mod,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-#df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
 
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
 
-# set.seed(1234)
-# perm <- sample(1:nrow(df_mod2),round(0.7*nrow(df_mod2)))
-# dapp <- df_mod2[perm,]
-# dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
 xtrain_rose = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
@@ -271,15 +242,9 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 #base normale
-#df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
 
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
-# set.seed(1234)
-# perm <- sample(1:nrow(df_mod2),round(0.7*nrow(df_mod2)))
-# dapp <- df_mod2[perm,]
-# dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
 xtrain_normal = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
@@ -299,15 +264,9 @@ table(df_mod$match)
 
 resu=creationDesData(df_mod,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-#df_mod2 <- data.frame(lapply(df_mod, function(x) as.numeric(as.character(x))))
 
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
-# set.seed(1234)
-# perm <- sample(1:nrow(df_mod2),round(0.7*nrow(df_mod2)))
-# dapp <- df_mod2[perm,]
-# dtest <- df_mod2[-perm,]
 
 ncol = ncol(dapp) - 1 
 xtrain_over = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
@@ -343,8 +302,10 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 100,
+  batch_size =0.1,epochs = 6000,
   validation_split = 0.1
+  ,
+  view_metrics = FALSE
 )
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
@@ -356,11 +317,9 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 
 
+# optimisation par combinaison des meilleurs méthodes
 
-
-
-
-##################################
+# méthode oversampling
 
 model_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
 
@@ -374,6 +333,8 @@ F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1), ytest
 
 ##################################
 
+# méthode Rose
+
 model_2 = load_model_hdf5("Modelisation/IA/model_f1_rose_41365_2.hdf5")
 
 l = seq(0.05,0.95,0.01)
@@ -385,6 +346,8 @@ f1_2 = f1_list[which.max(f1_list)]
 F1_Score(as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2), ytest, positive = "1")
 
 ##################################
+
+# méthode oversampling
 
 model_3 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
 
@@ -409,9 +372,9 @@ predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 
-# avec meilleur seuil : f1_score de 0.5928 >> meilleur modele a ce jour
+# avec meilleur seuil : 
 
-
+# avec les 3 IA
 predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)
                         +as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2)
                         +as.integer(predict_proba(model_3,xtest_normal)>meilleur_seuil_3)
@@ -421,12 +384,31 @@ predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 
-######################### avec pondération sur les probas
+# avec les deux IA over sampling : deuxième meilleur modèle en f1 score >> super precision donc peut etre meilleur modèle
+
+predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)
+                        +as.integer(predict_proba(model_3,xtest_normal)>meilleur_seuil_3)
+                        >1)
+
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+
+# avec pondération sur les probas : 3 modèles
 
 predSimple = as.integer(f1_1*predict_proba(model_1,xtest_normal)
                         + f1_2*predict_proba(model_2,xtest_normal)
                         + f1_3*predict_proba(model_3,xtest_normal)
                                    >(f1_1+f1_2+f1_3)/2)
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+
+# avec pondération sur les probas : 2 modèles : f1_score de 0.6091 >> meilleur modele a ce jour mais moins bonne précision
+
+predSimple = as.integer(f1_1*predict_proba(model_1,xtest_normal)
+                        + f1_3*predict_proba(model_3,xtest_normal)
+                        >(f1_1+f1_3)/2)
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))

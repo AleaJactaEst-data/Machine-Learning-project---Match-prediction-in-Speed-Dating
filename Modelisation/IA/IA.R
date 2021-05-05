@@ -409,7 +409,7 @@ predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 
-# avec meilleur seuil
+# avec meilleur seuil : f1_score de 0.5928 >> meilleur modele a ce jour
 
 
 predSimple = as.integer(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1)

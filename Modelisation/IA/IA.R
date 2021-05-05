@@ -362,7 +362,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 ##################################
 
-model_1 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_over_5752_2.hdf5")
+model_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
 
 l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
@@ -374,7 +374,7 @@ F1_Score(as.integer(predict_proba(model_1,xtest_normal)>meilleur_seuil_1), ytest
 
 ##################################
 
-model_2 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_rose_41365_2.hdf5")
+model_2 = load_model_hdf5("Modelisation/IA/model_f1_rose_41365_2.hdf5")
 
 l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
@@ -386,7 +386,7 @@ F1_Score(as.integer(predict_proba(model_2,xtest_normal)>meilleur_seuil_2), ytest
 
 ##################################
 
-model_3 = load_model_hdf5("C:/Users/jacta/Desktop/4GM/Projet-SpeedDating/Modelisation/IA/model_f1_over_5008_2.hdf5")
+model_3 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
 
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_3,xtrain_normal)>s), ytrain_normal, positive = "1"))

@@ -373,7 +373,6 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
       layer_dropout(0.3)  %>%
       layer_dense(units = round(ncol*0.15), activation ="relu") %>%
       layer_dropout(0.3)  %>%
-      
       layer_dense(units = 1, activation = "sigmoid")
     
     
@@ -395,13 +394,16 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     predSimple <- model %>% predict_classes(xtest)
     #print(table(predSimple))
     acc = sum(predSimple == ytest)/length(ytest)
-
-
-    f1_ = F1_Score(as.integer(predict_proba(model,xtest)>0.5), ytest, positive = "1")
-    sol = cbind(sol, c(i,acc,f1_))
-    print(c(i,acc,f1_))
+    if(sum(ytest) != 0){
+      sensitivity = sum(predSimple == ytest && ytest == 1)/sum(ytest)
+    }else{
+      sensitivity = 0
+    }
     
-    remove(model, history, predSimple, acc, f1_, focal_loss)
+    sol = cbind(sol, c(i,acc,sensitivity))
+    print(c(i,acc,sensitivity))
+    
+    remove(model, history, predSimple, acc, sensitivity, focal_loss)
   }
   
   return(sol)

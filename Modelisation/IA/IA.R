@@ -66,7 +66,7 @@ ytest = dtest$match
 #Optim
 
 # resultat pour gamma = 
-res = optimisationNeuroneDeeplearning(0.1, 12, 0.3, 700, xtrain, xtest,ytrain, ytest); # 1 et 6.7, 9.4
+res = optimisationNeuroneDeeplearning(0.2, 10, 0.5, 700, xtrain, xtest,ytrain, ytest); # 1 et 6.7, 9.4
 
 
 # loss function et metrics

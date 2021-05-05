@@ -206,7 +206,7 @@ creationDf_Couple = function(df,df_individu){
 ######################################################################♠
 
 creation_avg_ect=function(df_couple2){
-  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
+  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig","date","go_out",
             "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
             paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
   )
@@ -255,7 +255,7 @@ creation_avg_ect=function(df_couple2){
 
 creation_same_ind=function(df_couple2){
   
-  var_qual=c("field_cd","race", "goal","date","go_out","career_c")
+  var_qual=c("field_cd","race", "goal","career_c")
   var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
   
   

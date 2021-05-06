@@ -545,11 +545,18 @@ XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 # Création de la base de donnée finale
 
+feature_eng() permet de prendre notre base de donnée corrigé, transformé, vidé de ces Na, etc... Elle change des formats, mets les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétrie du modèle (une paire apparait deux fois), elle crée des variables de distances et de moyenne des varaibles numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
+
+feature_selection() va permettre de donner toutes les varaiables non significatifs à partir d'un seuil. Les variables numériques et factorielles ne sont pas testé de la même façon.
+
+creationDesData() va permettre de créer notre base finale avec aussi les base de test et d'apprentissage.
+
+
 ```{r}
 #IMPORTATION JEU DE DONNEE
 df_mod=feature_eng()
 #var significatif 
-var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual)
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
 
 # Creation des bases de test et d'apprentissage
 
@@ -559,8 +566,11 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 ## Intelligence artificielle
 
+L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
+
 # Transformation de la base de donnée pour l'intelligence artificielle
 
+Les bases de données doivent transformé en numérique puis en matrix. 
 ```{r }
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
@@ -737,9 +747,11 @@ Passons maintenant aux différentes méthode d'échantillonange permetttant de r
 
 Création des différentes bases nécessaires
 
+On change de base car il faut moins de variables pour le nombre d'individus pour que les méthodes de rééchantillonage fonctionne.
+
 ```{r}
 df_mod=feature_eng()
-var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1) # on change ici le seuil car Rose a besoin #d'avoir assez d'individus pour le nombre de variables donc on diminue le nombre de varaibles 
 #Split
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
@@ -812,6 +824,8 @@ predSimple <- model %>% predict_classes(xtest_normal)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 ```
 
+On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile à implémenter.
+
 Meilleur modèle avec Rose trouvée :
 
 ```{r}
@@ -832,6 +846,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 
 # Intelligence artificielle avec méthode d'échantillonage : suréchantillonage
+
+Pour les mêmes raisons, on change de base.
 
 Création des différentes bases nécessaires
 ```{r}
@@ -902,6 +918,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
+Les résultats sont excellents avec cette méthode même avec des epochs faibles. APrès à partir de 1000 epochs, les résultats sont moins bons donc il faut faire attention.
+
 Meilleurs modèles avec la méthode de suréchantillonage :
 
 
@@ -926,7 +944,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 ```
 
-Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5
+Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5. Le nombre d'epochs est de 700.
 
 ```{r}
 model_over_2 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
@@ -949,7 +967,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 ```
 # Combinaison de modèles IA
 
-Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancé le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
+Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancer le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
 
 
 Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_over_2" seul.

@@ -237,7 +237,7 @@ creationDf_Couple = function(df,df_individu){
 ######################################################################♠
 
 creation_avg_ect=function(df_couple2){
-  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig","date","go_out",
+  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
             "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
             paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
   )
@@ -286,10 +286,9 @@ creation_avg_ect=function(df_couple2){
 
 creation_same_ind=function(df_couple2){
   
-  var_qual=c("field_cd","race", "goal","career_c")
+  var_qual=c("field_cd","race", "goal","date","go_out","career_c")
   var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
   
-  var_num=c()
   
   #Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
   for( v in var_qual){
@@ -299,7 +298,7 @@ creation_same_ind=function(df_couple2){
     df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
     #comptage
     for(mod in v_modalite){
-      var_num=c(var_num,paste0(v,"_",mod))
+      var_qual2=c(var_qual2,paste0(v,"_",mod))
       df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
     }
   }
@@ -307,7 +306,7 @@ creation_same_ind=function(df_couple2){
     df_couple2[,var] = as.factor(df_couple2[,var])
   }
   
-  return(list("df"=df_couple2, "var_qual" =  var_qual2,"var_num"=var_num))
+  return(list("df"=df_couple2, "var_qual" =  var_qual2))
 }
 
 
@@ -444,6 +443,11 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 
 
 
+
+
+
+
+
 f1 <- function (data, lev = NULL, model = NULL) {
   experience<<-data
   precision <- Precision(data$pred, data$obs,positive ="1")
@@ -453,6 +457,7 @@ f1 <- function (data, lev = NULL, model = NULL) {
   print(resu)
   resu
 }
+
 
 
 recall_m=function(y_true, y_pred){
@@ -475,6 +480,7 @@ f1_m=function(y_true, y_pred){
   recall = recall_m(y_true, y_pred)
   return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
 } 
+
 ```
 
 
@@ -482,9 +488,6 @@ f1_m=function(y_true, y_pred){
 # Feature engineering
 
 ```{r }
-
-library(rcompanion)
-library(caret)
 
 feature_eng=function(){
   df_couple2=importation()
@@ -500,7 +503,6 @@ feature_eng=function(){
   resu=creation_same_ind(df_couple2)
   df_couple2=resu$df
   var_qual = resu$var_qual
-  var_num = c(resu$var_num,var_num)
 
   
   return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
@@ -557,13 +559,12 @@ importation=function(){
   return(df_couple%>%select(-c("pid","iid")))
   
 }
-
-
-
-
 ```
 
+# Présentation de la base
 
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
 # Création de la base de donnée finale
@@ -727,7 +728,7 @@ meilleur_seuil_poids = l[which.max(f1_list)]
 f1_poids = f1_list[which.max(f1_list)]
 
 
-predSimple = as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_1)
+predSimple = as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 ```
 
@@ -812,7 +813,7 @@ predSimple <- model %>% predict_classes(xtest_normal)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 ```
 
-Meilleur modèle avec Rose trouvée
+Meilleur modèle avec Rose trouvée :
 
 ```{r}
 # méthode Rose
@@ -890,7 +891,7 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 500,
+  batch_size =0.1,epochs = 100,
   validation_split = 0.1
 )
 #prédiction sur l'échantillon test
@@ -902,3 +903,114 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
+Meilleurs modèles avec la méthode de suréchantillonage :
+
+
+Voiciun modèle trouvée à 200 epochs, il va permettre de complémenter le modèle à 700 epochs pour la suite du code
+```{r}
+model_over_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
+
+l = seq(0.05,0.9,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
+f1_list
+
+meilleur_seuil_over_1 = l[which.max(f1_list)]
+f1_over_1 = f1_list[which.max(f1_list)]
+
+print("prediction avec le meilleur seuil de f1_score")
+predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+
+print("prédiction avec le seuil standard de 0.5")
+predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+
+```
+
+Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5
+
+```{r}
+model_over_2 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
+
+l = seq(0.05,0.9,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
+f1_list
+
+meilleur_seuil_over_2 = l[which.max(f1_list)]
+f1_over_2 = f1_list[which.max(f1_list)]
+
+print("prediction avec le meilleur seuil de f1_score")
+predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+
+print("prédiction avec le seuil standard de 0.5")
+predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+
+```
+# Combinaison de modèles IA
+
+Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancé le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
+
+
+Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_over_2" seul.
+```{r}
+predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>0.5)
+                        +as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
+                        +as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
+                        >1.5)
+
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```
+
+On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents meilleurs seuils qui maximisent le F1_score que nous avons trouvé précédemmen.On trouve ici un F1_score de 0.5928 ce qui est le meilleur modèle pour l'instant trouvé.
+
+```{r}
+predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
+                        +as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
+                        +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
+                        >1.5)
+
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```
+Maintenant, on utilise les probabilité données par les IA en les pondérant en fonction de leur F1_score respective permettant de donner plus de poids au meilleur modèle. Le F1_score est de 0.58 ce qui n'est pas incroyable.
+
+```{r}
+# avec pondération sur les probas : 3 modèles
+
+predSimple = as.integer(f1_rose*predict_proba(model_rose,xtest_normal)
+                        + f1_over_1*predict_proba(model_over_1,xtest_normal)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
+                                   >(f1_rose+f1_over_1+f1_over_2)/2)
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```
+
+On refait maintenant le même travail mais avec juste que les deux IA de suréchantillonage (les deux meilleurs et qui se complémentent bien en fonction de leur précision et sensitivité). On trouve un modèle incroyable en faisant un vote à la majorité avec un F1_score de 0.6065, une accuracy d'environ 87% et une sensitivité forte permettant de trouver des bons matchs.
+```{r}
+predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
+                        +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
+                        >1)
+
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```
+Ici, on utilise la pondération des probabilités comme vu précédemment mais avec que les deux modèles de suréchantillonage. On trouve un modèle avec un meilleur F1_score avec 0.6091 cependant l'accuracy est moins bonne ce qui est fait peut-être de ce modèle un moins bonne modèle.
+
+
+```{r}
+#  : 2 modèles : f1_score de 0.6091 >> meilleur modele a ce jour mais moins bonne précision
+
+predSimple = as.integer(f1_over_1*predict_proba(model_over_1,xtest_normal)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
+                        >(f1_over_1+f1_over_2)/2)
+
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```

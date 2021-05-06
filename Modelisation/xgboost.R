@@ -29,10 +29,11 @@ test_model<-function(test_data,model,seuil=0.5){
 best_f1<-function(model,test_data,min=0.01,max=0.99,step=0.001){
   seuil=seq(min,max,step)
   f1_seuil=sapply(seuil,function(x){
+    print(x)
     # Testing
     final <- data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))
-    final$predict <- ifelse(final$X0 > x, "0", "1")
-    ifelse(all(final$predict=="0"),NaN,F1_Score(final$predict, final$actual,positive ="1"))
+    final$predict <- factor(ifelse(final$X0 > x, "0", "1"),levels = c("0","1"))
+    F1_Score(final$predict, final$actual,positive ="1")
   })
   return(list(seuil=seuil,F1=f1_seuil))
 }
@@ -63,14 +64,25 @@ test_model(test_data,rf_fit,f1_eval$seuil[which.max(f1_eval$F1)])
 
 # Methode re-echantillonnage ----------------------------------------------
 ctrl_up <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "up")
+ctrl_rose <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "rose")
 
 #XGBOOST
 k<<-0
 rf_fit_up <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_up,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
-plot(rf_fit_sample)
+plot(rf_fit_up)
 # Testing
-test_model(test_data,rf_fit_up,0.95)
+f1_eval2=best_f1(rf_fit_up,test_data)
+plot(plot(f1_eval2$seuil,f1_eval2$F1))
+test_model(test_data,rf_fit_up,f1_eval2$seuil[which.max(f1_eval2$F1)])
 
+#XGBOOST
+k<<-0
+rf_fit_rose <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_rose,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
+plot(rf_fit_rose)
+# Testing
+f1_eval3=best_f1(rf_fit_rose,test_data)
+plot(plot(f1_eval3$seuil,f1_eval3$F1))
+test_model(test_data,rf_fit_rose,f1_eval3$seuil[which.max(f1_eval3$F1)])
 
 
 

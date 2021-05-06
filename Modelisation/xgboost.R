@@ -5,13 +5,12 @@ library(xgboost)
 library(ROSE)
 library(MLmetrics)
 library(caret)
-library(doSNOW)
 library(dplyr)
 library(stringr)
 library(rcompanion)
 
 f1 <- function (data, lev = NULL, model = NULL) {
-  k<<-k+1;print(k)
+  setTxtProgressBar(pb, k/360);k<<-k+1;
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
@@ -54,7 +53,7 @@ tune_grid <- expand.grid(nrounds=c(500,1000,2000),max_depth = c(1:3), eta = c(0.
 ctrl <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid")
 
 #XGBOOST
-k<<-0
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit)
 # Testing
@@ -67,7 +66,7 @@ ctrl_up <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = 
 ctrl_rose <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "rose")
 
 #XGBOOST
-k<<-0
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit_up <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_up,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit_up)
 # Testing
@@ -76,7 +75,7 @@ plot(plot(f1_eval2$seuil,f1_eval2$F1))
 test_model(test_data,rf_fit_up,f1_eval2$seuil[which.max(f1_eval2$F1)])
 
 #XGBOOST
-k<<-0
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit_rose <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_rose,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit_rose)
 # Testing

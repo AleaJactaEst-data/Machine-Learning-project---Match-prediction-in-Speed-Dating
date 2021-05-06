@@ -15,7 +15,6 @@ feature_eng=function(){
   resu=creation_same_ind(df_couple2)
   df_couple2=resu$df
   var_qual = resu$var_qual
-  var_num = c(resu$var_num,var_num)
 
   
   return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))

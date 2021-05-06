@@ -206,7 +206,7 @@ creationDf_Couple = function(df,df_individu){
 ######################################################################♠
 
 creation_avg_ect=function(df_couple2){
-  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig","date","go_out",
+  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
             "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
             paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
   )
@@ -255,10 +255,9 @@ creation_avg_ect=function(df_couple2){
 
 creation_same_ind=function(df_couple2){
   
-  var_qual=c("field_cd","race", "goal","career_c")
+  var_qual=c("field_cd","race", "goal","date","go_out","career_c")
   var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
   
-  var_num=c()
   
   #Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
   for( v in var_qual){
@@ -268,7 +267,7 @@ creation_same_ind=function(df_couple2){
     df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
     #comptage
     for(mod in v_modalite){
-      var_num=c(var_num,paste0(v,"_",mod))
+      var_qual2=c(var_qual2,paste0(v,"_",mod))
       df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
     }
   }
@@ -276,7 +275,7 @@ creation_same_ind=function(df_couple2){
     df_couple2[,var] = as.factor(df_couple2[,var])
   }
   
-  return(list("df"=df_couple2, "var_qual" =  var_qual2,"var_num"=var_num))
+  return(list("df"=df_couple2, "var_qual" =  var_qual2))
 }
 
 

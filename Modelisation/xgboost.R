@@ -10,7 +10,7 @@ library(stringr)
 library(rcompanion)
 
 f1 <- function (data, lev = NULL, model = NULL) {
-  setTxtProgressBar(pb, k/360);k<<-k+1;
+  setTxtProgressBar(pb, k/nb_tune);k<<-k+1;
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
@@ -47,7 +47,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 
 tune_grid <- expand.grid(nrounds=c(500,1000,2000),max_depth = c(1:3), eta = c(0.1,0.01), gamma = c(0.1,0),colsample_bytree = c(0.75),subsample = c(0.50),min_child_weight = c(0))
-
+nb_tune<<-nrow(tune_grid)*10
 # Classique ---------------------------------------------------------------
 
 ctrl <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid")

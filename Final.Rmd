@@ -234,7 +234,7 @@ creationDf_Couple = function(df,df_individu){
   return(df_couple)
 }
 
-######################################################################♠
+######################################################################
 
 creation_avg_ect=function(df_couple2){
   var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
@@ -449,66 +449,17 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 
 
 f1 <- function (data, lev = NULL, model = NULL) {
-  experience<<-data
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
   resu=c("precision"=precision,"rappel"=recall,"F1"=f1_val)
-  print(resu)
   resu
 }
 
 
-
-recall_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
-  recall = true_positives / (possible_positives + k_epsilon())
-  return(recall)
-} 
-precision_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
-  precision = true_positives / (predicted_positives + k_epsilon())
-  return(precision)
-}
-
-# parametre beta a changer
-f1_m=function(y_true, y_pred){
-  beta = 1
-  precision = precision_m(y_true, y_pred)
-  recall = recall_m(y_true, y_pred)
-  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
-} 
-
 ```
 
 
-
-# Feature engineering
-
-```{r }
-
-feature_eng=function(){
-  df_couple2=importation()
-  
-  # Var numerique -----------------------------------------------------------
-  
-  resu=creation_avg_ect(df_couple2)
-  df_couple2=resu$df
-  var_num = resu$var_num
-    
-  # Var qualitative ---------------------------------------------------------
-  
-  resu=creation_same_ind(df_couple2)
-  df_couple2=resu$df
-  var_qual = resu$var_qual
-
-  
-  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
-}
-
-```
 
 # Preprocessing
 
@@ -561,6 +512,31 @@ importation=function(){
 }
 ```
 
+# Feature engineering
+
+```{r }
+
+feature_eng=function(){
+  df_couple2=importation()
+  
+  # Var numerique -----------------------------------------------------------
+  
+  resu=creation_avg_ect(df_couple2)
+  df_couple2=resu$df
+  var_num = resu$var_num
+    
+  # Var qualitative ---------------------------------------------------------
+  
+  resu=creation_same_ind(df_couple2)
+  df_couple2=resu$df
+  var_qual = resu$var_qual
+
+  
+  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
+}
+
+```
+
 # Présentation de la base
 
 XXXXXXXXXXXXXXXXXXXXXXXXXXXX
@@ -597,6 +573,29 @@ ytrain = dapp$match
 
 xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest = dtest$match
+
+#Redéfinition des metric pour l'IA
+
+recall_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
+  recall = true_positives / (possible_positives + k_epsilon())
+  return(recall)
+} 
+precision_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
+  precision = true_positives / (predicted_positives + k_epsilon())
+  return(precision)
+}
+
+# parametre beta a changer
+f1_m=function(y_true, y_pred){
+  beta = 1
+  precision = precision_m(y_true, y_pred)
+  recall = recall_m(y_true, y_pred)
+  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
+} 
 ```
 
 # Intelligence artificielle avec la fonction focal_loss

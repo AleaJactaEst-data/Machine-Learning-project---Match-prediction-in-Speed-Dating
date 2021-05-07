@@ -1,0 +1,198 @@
+---
+title: "RegLASSO_RIDGE"
+author: "Theo"
+date: "07/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caret)
+library(rpart)
+library(xgboost)
+library(ROSE)
+library(MLmetrics)
+library(caret)
+library(doSNOW)
+library(dplyr)
+library(stringr)
+library(rcompanion)
+library(glmnet)
+library(pROC)
+```
+
+```{r}
+#Base entrainement / Validation
+dapp
+```
+
+```{r}
+dtest
+```
+
+# Regression de Ridge classique
+
+```{r}
+#Parametres lambda a tester
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Accuracy
+mean(abs(pred-dapp$match))
+
+#Table
+table("pred"=pred, "test"=dtest$match)
+```
+
+### Sampling sur le jeu de donnees avec ROSE
+
+```{r}
+data.rose <- ROSE(match ~ ., data = dapp, seed = 1)$data
+table(data.rose$match)
+```
+
+```{r}
+dapp1 = data.rose
+
+
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp1)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp1$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_rose <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Accuracy
+mean(abs(pred-dapp1$match))
+
+#Table
+table("pred"=pred, "test"=dtest$match)
+```
+
+```{r}
+#over sampling
+dapp2 <- ovun.sample(match ~ ., data = dapp, method = "over",N = 4696)$data
+table(dapp2$match)
+#under sampling
+dapp3 <- ovun.sample(match ~ ., data = dapp, method = "under", N = 934, seed = 1)$data
+table(dapp3$match)
+```
+
+```{r}
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp2)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp2$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_over <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Accuracy
+mean(abs(pred-dapp2$match))
+
+#Table
+table("pred"=pred, "test"=dtest$match)
+```
+
+```{r}
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp3)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp3$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_under <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Accuracy
+mean(abs(pred-dapp3$match))
+
+#Table
+table("pred"=pred, "test"=dtest$match)
+```
+
+
+```{r}
+roc1=roc(dtest$match, pred_rose)
+roc2=roc(dtest$match, pred_over)
+roc3=roc(dtest$match, pred_under)
+
+plot(roc1, col = 1, lty = 2, main = "ROC")
+plot(roc2, col = 2, lty = 2, add = TRUE)
+plot(roc3, col = 3, lty = 2, add = TRUE)
+
+legend("bottom",
+       legend=c("Rose", "Over", "Under"),
+       col=c(1,2,3),
+       lwd=4, cex =1, xpd = TRUE, horiz = FALSE)
+```
+
+
+
+
+
+
+
+

@@ -677,7 +677,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
 resu=creationDesData(df_mod,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+df_mod = resu$df_mod;train_data = resu$dapp
 
 ```
 

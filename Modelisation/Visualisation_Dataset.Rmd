@@ -1,0 +1,177 @@
+---
+title: "VisualisationDataset"
+author: "Theo"
+date: "08/05/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(corrplot)
+library(RColorBrewer)
+library(ggplot2)
+library(cramer)
+library(rcompanion)
+```
+
+# Ouverture jeu de donnees
+
+```{r}
+dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
+dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
+
+df_mod
+```
+
+```{r}
+df_num = df_mod %>% select(where(is.numeric))
+df_num
+```
+
+```{r}
+#Pour les filles
+df_num_girl = df_num[,1:21]
+df_num_boy = df_num[,22:46]
+df_num_moy = df_num[,47:81]
+df_num_girl
+df_num_boy
+df_num_moy
+```
+
+```{r}
+M_girl <- cor(df_num_girl)
+M_boy <- cor(df_num_boy)
+M_moy <- cor(df_num_moy)
+
+corrplot(M_girl, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_boy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_moy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"), tl.cex=0.6)
+```
+
+Pour les femmes:
+On observe une forte corrélation entre la partitipation d'une femme aux activités artistiques et sa participation à des activités telles que des musées ou concerts.
+
+Pour les hommes :
+attr4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la beauté chez leur partenaire.
+amb4_avg.y : Note qui indique si l'individu pense que les hommes cherchent l'ambition chez leur partenaire.
+sinc4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la sincérité chez leur partenaire.
+
+On observe une corrélation négative entre attr4_avg.y à amb4_avg.y, sinc4_avg.y.
+Lorsqu'une personne pense que les hommes accordent de l'importance à la beauté, elle considère généralement qu'ils ne s'intéressent pas à l'ambition ou à la sincérité de leur partenaire et inversement.
+
+Pour les moyennes :
+fun5_avg_ect corrélé positivement à attribut5_dist
+attribut5_dist corrélé positivement à amb5_avg_act
+
+
+# Rapport de corrélation
+
+
+```{r}
+rapp_corr <- function(df,x, groupe) {
+    vartot<- sum((df[,x] - mean(df[,x]))^2)
+    moyennes <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(n=mean(!!rlang::sym(x)))%>%select(n)
+    effectifs <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(l=length(!!rlang::sym(x)))%>%select(l)
+    varinter <- (sum(effectifs * (moyennes - mean(df[,x]))^2))
+    res <- varinter/vartot
+    return(res)
+  }
+```
+
+```{r}
+colnames(df_num)
+```
+
+
+```{r}
+df_num2 = df_num
+df_num2$match <- df_mod$match
+rap_cor_match <- sapply(colnames(df_num), rapp_corr, df=df_num2, groupe="match")
+rap_df <- data.frame("attribut"=names(rap_cor_match), "rap_cor"=rap_cor_match)
+rap_df <- rap_df[order(rap_df$rap_cor),]
+```
+
+
+```{r}
+ggplot(rap_df, aes(x = reorder(attribut, -rap_cor), y = rap_cor)) + 
+  geom_bar(stat = "identity", fill="lightblue") +
+  ggtitle("Rapport de corrélation pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Rapport de corrélation")
+```
+
+# Test de student
+
+```{r}
+studentTest <- function(x, y){
+  return(t.test(x, as.numeric(y)))
+}
+stud_t_match <- unlist(lapply(df_num, cramV, y=df_num2$match))
+
+student_t <- data.frame("attribut"=names(stud_t_match), "stud_t"=stud_t_match)
+```
+
+```{r}
+ggplot(student_t, aes(x = reorder(attribut, -stud_t), y = stud_t)) + 
+  geom_bar(stat = "identity", fill="lightgoldenrod") +
+  ggtitle("Test de Student pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Test de Student")
+```
+
+
+
+# V de Cramer
+
+```{r}
+df_fac = df_mod %>% select(where(is.factor))
+df_fac
+```
+
+```{r}
+tab <- table(df_fac[,1], df_fac[,2])
+print(tab)
+cramerV(tab)
+```
+
+```{r}
+cramV <- function(x, y){
+  return(cramerV(table(x,y)))
+}
+cram_v_match <- unlist(lapply(df_fac[,-1], cramV, y=df_fac[,1]))
+
+cram_v <- data.frame("attribut"=names(cram_v_match), "cramer_v"=cram_v_match)
+```
+
+```{r}
+ggplot(cram_v, aes(x = reorder(attribut, -cramer_v), y = cramer_v)) + 
+  geom_bar(stat = "identity", fill="lightgreen") +
+  ggtitle("V de Cramer pour chaque variable qualitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables qualitatives explicatives")+
+  ylab("V de Cramer")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

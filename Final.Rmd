@@ -647,6 +647,7 @@ rapp_corr <- function(df,x, groupe) {
 
 
 ```{r}
+#Calcul des rapports de correlation
 df_num2 = df_num
 df_num2$match <- df_mod$match
 rap_cor_match <- sapply(colnames(df_num), rapp_corr, df=df_num2, groupe="match")

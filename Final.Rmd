@@ -625,7 +625,7 @@ f1_m=function(y_true, y_pred){
 La fonction de perte focal_loss est connue pour s'occuper de données non équilibrées. En prenant une valeur de gamma grande, on fait en sorte que les bonnes prédiction pour la classe 0 soit moins importantes cependant en augmantant gamma, on diminue fortement la fonction de perte ansi, au commencement même de l'entrainement, on peut avoir une fonction de perte proche de 0 et ainsi, pas efficace. Il faut donc trouver le meilleur gamma capable de donner plsu importance aux bonnes prédictions pour la classe 1 sans avoir une fonciton de perte trop petite et inutilisable.
 
 
-```{r, include = False}
+```{r, include = FALSE}
 
 #Optimisation de gamma
 

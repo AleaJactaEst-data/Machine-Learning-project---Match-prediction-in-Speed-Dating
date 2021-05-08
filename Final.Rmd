@@ -32,211 +32,6 @@ library(keras)
 # Fonctions nécessaire pour le bon déroulement du projet
 
 ```{r}
-
-# Gestion Variables
-
-# Undergra
-gestionUndergra = function(df){
-  df$undergra = as.character(df$undergra)
-  df$undergra[which(df$undergra!="")] = 1
-  df$undergra[which(df$undergra=="")] = 0
-  df$undergra = factor(df$undergra)
-  
-  return(df)
-}
-
-
-# Career
-gestionCareer = function(df){
-  #Si career : lawyer alors career_c : 1
-  df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
-  
-  #Si career : Economist alors career_c : 7 (with Finance...)
-  df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
-  
-  #Si career : tech professional  alors career_c : 7 (with Finance...)
-  df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
-  
-  #Suppression des autres individus : quasiment toutes leurs variables sont nulles
-  to_delete = df$career_c %>% is.na %>% which
-  df = df[!seq_len(nrow(df)) %in% to_delete, ]
-  
-  df %>% dplyr::select(c("career_c","career"))
-  
-  return(df)
-}
-
-
-
-# Income
-gestionIncome = function(df){
-  income_ = as.character(factor(df$income)) # on convertit en character les valeurs
-  
-  for(i in 1:dim(df)[1]){
-    string = income_[i] # on prend notre character
-    id  = nchar(string) - 6 # l'indice où est la virgule
-    if(id>0 & !is.na(id)){
-      str_sub(string, id, id) <- "" # on remplace la virgule par rien
-    }
-    income_[i] = string
-  }
-  
-  df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
-  
-  return(df)
-}
-
-
-
-# Essayer d'enlever les Na
-
-# Agregation
-agregationVariable = function(df){
-  df2=df
-  # CODE POUR GERER LE REGROUPEMENT DE VARIABLE
-  attribut=c("attr","sinc","intel","fun","amb","shar")
-  time=c(as.character(1:3),"s")
-  catg=c(1:5,7)
-  
-  var_gen=outer(attribut,outer(catg,paste0("_",time),paste0),paste0)
-  var_avg=outer(attribut,outer(catg,"_avg",paste0),paste0)
-  
-  #Etape 1 : harmoniser le systeme de point
-  for(k in c(1,2,4)){#theme qui ont besoin d'être harmonisé
-    for(i in 1:4){
-      if(all(var_gen[,k,i]%in%names(df2))){
-        df2[,var_gen[,k,i]]=sapply(var_gen[,k,i],function(v) 100*df2[,v]/apply(df2[,var_gen[,k,i]],1,sum,na.rm = T)) 
-      }
-    }
-  }
-  
-  #ETAPE2 : regroupement
-  for(k in 1:6){#catg/
-    for(i in 1:6){#attribut
-      v=var_gen[i,k,][which(var_gen[i,k,]%in%names(df2))]
-      df2[,var_avg[i,k,1]]= apply(df2[,v],1,mean,na.rm = T)
-    }
-  }
-  
-  #ETAPE3 : Supression des anciennes variables
-  v=as.vector(var_gen)
-  v=v[which(v%in%names(df2))]
-  df2=df2[,-which(names(df2)%in%v)]
-  
-  remove(attribut, catg, i, k, time, v, var_avg, var_gen)
-  
-  return(df2)
-}
-
-
-aggregateCarrer=function(df_individu){
-  #carrer_cd
-  law=c(1)
-  science=c(4,5,12)
-  huma=c(3,9,11,13,16)
-  art=c(6,17)
-  business=c(7,8)
-  chercheur=c(2)
-  sportif=c(14)
-  autre=c(10,15)
-  
-  df_individu$career_c2=8
-  df_individu$career_c2[df_individu$career_c%in%law]=1 #inutile mais bon
-  df_individu$career_c2[df_individu$career_c%in%science]=2
-  df_individu$career_c2[df_individu$career_c%in%huma]=3
-  df_individu$career_c2[df_individu$career_c%in%art]=4
-  df_individu$career_c2[df_individu$career_c%in%business]=5
-  df_individu$career_c2[df_individu$career_c%in%chercheur]=6
-  df_individu$career_c2[df_individu$career_c%in%sportif]=7
-  
-  return(df_individu)
-}
-
-aggregateField=function(df_individu){
-  #field_cd
-  law=c(1)
-  science=c(2,4,5,10)
-  huma=c(3,6,7,16,13,9)
-  art=c(14,15,17)
-  business=c(8)
-  autre=c(12,17)
-  
-  df_individu$field_cd2=6
-  df_individu$field_cd2[df_individu$field_cd%in%law]=1 #inutile mais bon
-  df_individu$field_cd2[df_individu$field_cd%in%science]=2
-  df_individu$field_cd2[df_individu$field_cd%in%huma]=3
-  df_individu$field_cd2[df_individu$field_cd%in%art]=4
-  df_individu$field_cd2[df_individu$field_cd%in%business]=5
-  
-  return(df_individu)
-}
-
-aggregateActivitie=function(df_individu){
-  #activite1
-  df_individu$act_sports=apply(df_individu,1,function(x) mean(x[c("sports","tvsports","exercise","hiking","yoga","clubbing")],na.rm=T))
-  df_individu$act_art=apply(df_individu,1,function(x) mean(x[c("museums","art","reading","theater","movies","concerts","music")],na.rm=T))
-  df_individu$act_autre=apply(df_individu,1,function(x) mean(x[c("dining","gaming","tv","shopping")],na.rm=T))
-  
-  #activite2
-  df_individu$act_casanier=apply(df_individu,1,function(x) mean(x[c("tvsports","gaming","tv","yoga","art","reading","music","movies")],na.rm=T))
-  df_individu$act_sortie=apply(df_individu,1,function(x) mean(x[c("sports","museums","theater","concerts","exercise","hiking","clubbing","dining","shopping")],na.rm=T))
-  
-  return(df_individu)
-}
-
-# Remplissage par la moyenne
-gestionDesNASystematiques = function(df_individu){
-  
-  for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
-    id = which(is.na(df_individu[,var]))
-    if(length(id)>0){
-      df_individu = df_individu[-id,]
-    }
-  }
-  
-  for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
-    id = which(is.na(df_individu[,var]))
-    m = mean(df_individu[-id,var])
-    df_individu[id,var] = m
-  }
-  
-  return(df_individu)
-}
-
-
-
-
-
-
-creationDf_Couple = function(df,df_individu){
-  df_couple_id = df[,c('iid','pid', 'match',"gender")]
-  df_couple_id=df_couple_id[order(df_couple_id$gender),]
-  
-  coupleDated = c()
-  ligneAenlever = c()
-  
-  for(i in 1:dim(df_couple_id)[1]){
-    iid = df_couple_id$iid[i]
-    pid = df_couple_id$pid[i]
-    
-    strCouple = paste(as.character(iid),as.character(pid))
-    strCoupleInv = paste(as.character(pid),as.character(iid))
-    
-    if(!(strCoupleInv %in% coupleDated)){
-      coupleDated = c(coupleDated,strCouple)
-    }
-    else{
-      ligneAenlever = c(ligneAenlever,i)
-    }
-  }
-  df_couple_id= df_couple_id[-ligneAenlever,]%>%select(-c("gender"))
-  
-  df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
-  
-  
-  return(df_couple)
-}
-
 ######################################################################
 
 creation_avg_ect=function(df_couple2){
@@ -476,7 +271,214 @@ De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant 
 Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
+Dans un premier temps il est nécéssaire de netoyer notre jeu de données et de le préparer pour répondre à notre probllématique
 
+## Gestion des valeur
+```{r}
+# Gestion Variables
+
+# Undergra
+gestionUndergra = function(df){
+  df$undergra = as.character(df$undergra)
+  df$undergra[which(df$undergra!="")] = 1
+  df$undergra[which(df$undergra=="")] = 0
+  df$undergra = factor(df$undergra)
+  
+  return(df)
+}
+
+# Career
+gestionCareer = function(df){
+  #Si career : lawyer alors career_c : 1
+  df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
+  
+  #Si career : Economist alors career_c : 7 (with Finance...)
+  df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
+  
+  #Si career : tech professional  alors career_c : 7 (with Finance...)
+  df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
+  
+  #Suppression des autres individus : quasiment toutes leurs variables sont nulles
+  to_delete = df$career_c %>% is.na %>% which
+  df = df[!seq_len(nrow(df)) %in% to_delete, ]
+  
+  df %>% dplyr::select(c("career_c","career"))
+  
+  return(df)
+}
+
+# Income
+gestionIncome = function(df){
+  income_ = as.character(factor(df$income)) # on convertit en character les valeurs
+  
+  for(i in 1:dim(df)[1]){
+    string = income_[i] # on prend notre character
+    id  = nchar(string) - 6 # l'indice où est la virgule
+    if(id>0 & !is.na(id)){
+      str_sub(string, id, id) <- "" # on remplace la virgule par rien
+    }
+    income_[i] = string
+  }
+  
+  df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
+  
+  return(df)
+}
+```
+
+## #Homogénisation systeme de points
+```{r}
+agregationVariable = function(df){
+  df2=df
+  # CODE POUR GERER LE REGROUPEMENT DE VARIABLE
+  attribut=c("attr","sinc","intel","fun","amb","shar")
+  time=c(as.character(1:3),"s")
+  catg=c(1:5,7)
+  
+  var_gen=outer(attribut,outer(catg,paste0("_",time),paste0),paste0)
+  var_avg=outer(attribut,outer(catg,"_avg",paste0),paste0)
+  
+  #Etape 1 : harmoniser le systeme de point
+  for(k in c(1,2,4)){#theme qui ont besoin d'être harmonisé
+    for(i in 1:4){
+      if(all(var_gen[,k,i]%in%names(df2))){
+        df2[,var_gen[,k,i]]=sapply(var_gen[,k,i],function(v) 100*df2[,v]/apply(df2[,var_gen[,k,i]],1,sum,na.rm = T)) 
+      }
+    }
+  }
+  
+  #ETAPE2 : regroupement
+  for(k in 1:6){#catg/
+    for(i in 1:6){#attribut
+      v=var_gen[i,k,][which(var_gen[i,k,]%in%names(df2))]
+      df2[,var_avg[i,k,1]]= apply(df2[,v],1,mean,na.rm = T)
+    }
+  }
+  
+  #ETAPE3 : Supression des anciennes variables
+  v=as.vector(var_gen)
+  v=v[which(v%in%names(df2))]
+  df2=df2[,-which(names(df2)%in%v)]
+  
+  remove(attribut, catg, i, k, time, v, var_avg, var_gen)
+  
+  return(df2)
+}
+```
+
+## Aggregation
+```{r}
+aggregateCarrer=function(df_individu){
+  #carrer_cd
+  law=c(1)
+  science=c(4,5,12)
+  huma=c(3,9,11,13,16)
+  art=c(6,17)
+  business=c(7,8)
+  chercheur=c(2)
+  sportif=c(14)
+  autre=c(10,15)
+  
+  df_individu$career_c2=8
+  df_individu$career_c2[df_individu$career_c%in%law]=1 #inutile mais bon
+  df_individu$career_c2[df_individu$career_c%in%science]=2
+  df_individu$career_c2[df_individu$career_c%in%huma]=3
+  df_individu$career_c2[df_individu$career_c%in%art]=4
+  df_individu$career_c2[df_individu$career_c%in%business]=5
+  df_individu$career_c2[df_individu$career_c%in%chercheur]=6
+  df_individu$career_c2[df_individu$career_c%in%sportif]=7
+  
+  return(df_individu)
+}
+
+aggregateField=function(df_individu){
+  #field_cd
+  law=c(1)
+  science=c(2,4,5,10)
+  huma=c(3,6,7,16,13,9)
+  art=c(14,15,17)
+  business=c(8)
+  autre=c(12,17)
+  
+  df_individu$field_cd2=6
+  df_individu$field_cd2[df_individu$field_cd%in%law]=1 #inutile mais bon
+  df_individu$field_cd2[df_individu$field_cd%in%science]=2
+  df_individu$field_cd2[df_individu$field_cd%in%huma]=3
+  df_individu$field_cd2[df_individu$field_cd%in%art]=4
+  df_individu$field_cd2[df_individu$field_cd%in%business]=5
+  
+  return(df_individu)
+}
+
+aggregateActivitie=function(df_individu){
+  #activite1
+  df_individu$act_sports=apply(df_individu,1,function(x) mean(x[c("sports","tvsports","exercise","hiking","yoga","clubbing")],na.rm=T))
+  df_individu$act_art=apply(df_individu,1,function(x) mean(x[c("museums","art","reading","theater","movies","concerts","music")],na.rm=T))
+  df_individu$act_autre=apply(df_individu,1,function(x) mean(x[c("dining","gaming","tv","shopping")],na.rm=T))
+  
+  #activite2
+  df_individu$act_casanier=apply(df_individu,1,function(x) mean(x[c("tvsports","gaming","tv","yoga","art","reading","music","movies")],na.rm=T))
+  df_individu$act_sortie=apply(df_individu,1,function(x) mean(x[c("sports","museums","theater","concerts","exercise","hiking","clubbing","dining","shopping")],na.rm=T))
+  
+  return(df_individu)
+}
+```
+
+## Gestion des NA
+```{r}
+# Remplissage par la moyenne
+gestionDesNASystematiques = function(df_individu){
+  
+  for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
+    id = which(is.na(df_individu[,var]))
+    if(length(id)>0){
+      df_individu = df_individu[-id,]
+    }
+  }
+  
+  for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
+    id = which(is.na(df_individu[,var]))
+    m = mean(df_individu[-id,var])
+    df_individu[id,var] = m
+  }
+  
+  return(df_individu)
+}
+```
+
+## Creation des couples
+```{r}
+creationDf_Couple = function(df,df_individu){
+  df_couple_id = df[,c('iid','pid', 'match',"gender")]
+  df_couple_id=df_couple_id[order(df_couple_id$gender),]
+  
+  coupleDated = c()
+  ligneAenlever = c()
+  
+  for(i in 1:dim(df_couple_id)[1]){
+    iid = df_couple_id$iid[i]
+    pid = df_couple_id$pid[i]
+    
+    strCouple = paste(as.character(iid),as.character(pid))
+    strCoupleInv = paste(as.character(pid),as.character(iid))
+    
+    if(!(strCoupleInv %in% coupleDated)){
+      coupleDated = c(coupleDated,strCouple)
+    }
+    else{
+      ligneAenlever = c(ligneAenlever,i)
+    }
+  }
+  df_couple_id= df_couple_id[-ligneAenlever,]%>%select(-c("gender"))
+  
+  df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
+  
+  
+  return(df_couple)
+}
+```
+
+## Fonction du prepocessing
 ```{r}
 importation=function(){
   pb=txtProgressBar(style = 3,width = 50)

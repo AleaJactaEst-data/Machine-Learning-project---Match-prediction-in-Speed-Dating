@@ -23,7 +23,12 @@ library(doSNOW)
 library(dplyr)
 library(stringr)
 library(rcompanion)
-
+library(dplyr)
+library(corrplot)
+library(RColorBrewer)
+library(ggplot2)
+library(cramer)
+library(rcompanion)
 library(tensorflow)
 #install_tensorflow() # si jamais vous n'avez jamais utilisé tensorflow, il faut l'installer avec cette commande
 
@@ -240,12 +245,6 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
   return(sol)
   
 }
-
-
-
-
-
-
 
 
 f1 <- function (data, lev = NULL, model = NULL) {
@@ -562,10 +561,11 @@ feature_eng=function(){
 ```
 
 
-
 # Création de la base de donnée finale
 
 feature_eng() permet de prendre notre base de donnée corrigée, transformée, vidée de ces Na, etc... Elle change des formats, met les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétries du modèle (une paire apparait deux fois), elle crée des variables de distance et de moyenne des variables numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
+
+
 
 # Création de la base de donnée finale
 
@@ -575,8 +575,7 @@ creationDesData() va permettre de créer notre base finale avec aussi les bases 
 
 
 ```{r}
-#IMPORTATION JEU DE DONNEE
-df_mod=feature_eng()
+df_mod = feature_eng()
 #var significatif 
 var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
 
@@ -586,7 +585,139 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 ```
 
+# Statistique descriptive et visualisation
 
+Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finales, en particulier les corrélations qu'il pourrait y avoir entre les variables.
+Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitaives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
+
+
+```{r}
+#Selection des variables numeriques
+df_num = df_mod %>% select(where(is.numeric))
+#Les variables numeriques concernant les avis des femmes
+df_num_girl = df_num[,names(df_num)[sapply(names(df_num),function(x) str_detect(x,"\\.x"))]]
+  #Les variables numeriques concernant les avis des hommes
+df_num_boy = df_num[,names(df_num)[sapply(names(df_num),function(x) str_detect(x,"\\.y"))]]
+df_num_moy = df_num[,names(df_num)[sapply(names(df_num),function(x) !str_detect(x,"\\.x") & !str_detect(x, "\\.y"))]]
+
+#Calcul des matrices de correlation
+M_girl <- cor(df_num_girl)
+M_boy <- cor(df_num_boy)
+M_moy <- cor(df_num_moy)
+
+#Affichage des matrices de correlation
+corrplot(M_girl, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_boy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_moy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"), tl.cex=0.6)
+```
+
+Pour les femmes:
+On observe une forte corrélation entre la partitipation d'une femme aux activités artistiques et sa participation à des activités telles que des musées ou concerts.
+
+Pour les hommes :
+attr4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la beauté chez leur partenaire.
+amb4_avg.y : Note qui indique si l'individu pense que les hommes cherchent l'ambition chez leur partenaire.
+sinc4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la sincérité chez leur partenaire.
+
+On observe une corrélation négative entre attr4_avg.y à amb4_avg.y, sinc4_avg.y.
+Lorsqu'une personne pense que les hommes accordent de l'importance à la beauté, elle considère généralement qu'ils ne s'intéressent pas à l'ambition ou à la sincérité de leur partenaire et inversement.
+
+Pour les moyennes :
+fun5_avg_ect corrélé positivement à attribut5_dist
+attribut5_dist corrélé positivement à amb5_avg_act
+
+## Rapport de corrélation
+
+Le rapport de corrélation est un indicateur statistique qui mesure l'intensité de la liaison entre une variable quantitative et une variable qualitative. Plus il est proche de 1, plus elles sont corrélées et plus il est proche de 0, moins elles le sont.
+
+```{r}
+#Calcule rapport de correlation pour une variables qualitative par rapport a la variable match
+rapp_corr <- function(df,x, groupe) {
+    vartot<- sum((df[,x] - mean(df[,x]))^2)
+    moyennes <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(n=mean(!!rlang::sym(x)))%>%select(n)
+    effectifs <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(l=length(!!rlang::sym(x)))%>%select(l)
+    varinter <- (sum(effectifs * (moyennes - mean(df[,x]))^2))
+    res <- varinter/vartot
+    return(res)
+  }
+```
+
+
+```{r}
+df_num2 = df_num
+df_num2$match <- df_mod$match
+rap_cor_match <- sapply(colnames(df_num), rapp_corr, df=df_num2, groupe="match")
+rap_df <- data.frame("attribut"=names(rap_cor_match), "rap_cor"=rap_cor_match)
+rap_df <- rap_df[order(rap_df$rap_cor),]
+```
+
+
+```{r}
+ggplot(rap_df, aes(x = reorder(attribut, -rap_cor), y = rap_cor)) + 
+  geom_bar(stat = "identity", fill="lightblue") +
+  ggtitle("Rapport de corrélation pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Rapport de corrélation")
+```
+
+Les rapports de corrélation sont très faibles donc les variables sont peu corrélées avec la variable à expliquer : match.
+
+## Test de student
+
+Pour chaque variable, on fait un test de Student : L'hypothèse nulle (H0) dit que les moyennes es observations des variables explicatives ne sont pas significativement différentes selon la classe de la variable explicative.
+
+
+```{r}
+studentTest <- function(x, y){
+  return(t.test(x~df_num2$match)$p.value)
+}
+stud_t_match <- unlist(lapply(df_num, studentTest, y=df_num2$match))
+
+student_t <- data.frame("attribut"=names(stud_t_match), "stud_t"=stud_t_match)
+```
+
+```{r}
+ggplot(student_t, aes(x = reorder(attribut, -stud_t), y = stud_t)) + 
+  geom_bar(stat = "identity", fill="lightgoldenrod") +
+  ggtitle("Test de Student pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Test de Student")
+```
+ Toutes les p-value sont < 0.05 donc on rejette H0 pour toutes les variables.
+ Les moyennes sont significativement différentes donc on conserve les variables.
+
+## V de Cramer
+
+Le V de Cramer est une mesure d'association entre deux variables de type factor, dans notre cas.
+Pour chaque variable on calcule le V de Cramer par rapport à la variable match à expliquer
+
+```{r}
+df_fac = df_mod %>% select(where(is.factor))
+
+#Calcul de V de Cramer pour chaque variable avec la variable match à expliquer
+cramV <- function(x, y){
+  return(cramerV(table(x,y)))
+}
+cram_v_match <- unlist(lapply(df_fac[,-1], cramV, y=df_fac[,1]))
+
+cram_v <- data.frame("attribut"=names(cram_v_match), "cramer_v"=cram_v_match)
+```
+
+```{r}
+ggplot(cram_v, aes(x = reorder(attribut, -cramer_v), y = cramer_v)) + 
+  geom_bar(stat = "identity", fill="lightgreen") +
+  ggtitle("V de Cramer pour chaque variable qualitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables qualitatives explicatives")+
+  ylab("V de Cramer")
+```
+
+Les valeurs sont très peu significatives donc pas de problème !
 
 # Regression logistique
 

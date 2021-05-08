@@ -567,6 +567,8 @@ feature_eng=function(){
 
 feature_eng() permet de prendre notre base de donnée corrigée, transformée, vidée de ces Na, etc... Elle change des formats, met les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétries du modèle (une paire apparait deux fois), elle crée des variables de distance et de moyenne des variables numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
 
+# Création de la base de donnée finale
+
 feature_selection() va permettre de donner toutes les varaiables non significatifs à partir d'un seuil. Les variables numériques et factorielles ne sont pas testées de la même façon.
 
 creationDesData() va permettre de créer notre base finale avec aussi les bases de test et d'apprentissage.
@@ -701,8 +703,7 @@ history <- model %>% fit(
 ## Résultats avec la fonction focal_loss
 
 
-```{r, include = FALSE}
-
+```{r}
 
 plot(history)
 

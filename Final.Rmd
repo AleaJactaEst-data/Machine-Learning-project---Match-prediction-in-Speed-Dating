@@ -459,7 +459,18 @@ f1 <- function (data, lev = NULL, model = NULL) {
 
 ```
 
+# Présentation de la base
 
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+
+Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
+Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
+
+L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
+
+De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
+
+Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
 
@@ -537,10 +548,6 @@ feature_eng=function(){
 
 ```
 
-# Présentation de la base
-
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 
 # Création de la base de donnée finale

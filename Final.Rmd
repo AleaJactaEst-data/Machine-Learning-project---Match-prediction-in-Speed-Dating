@@ -23,7 +23,7 @@ library(stringr)
 library(rcompanion)
 
 library(tensorflow)
-#install_tensorflow() # si jamais, utiliser tensorflow, il faut l'installer avec cette commande
+#install_tensorflow() # si jamais vous n'avez jamais utilisé tensorflow, il faut l'installer avec cette commande
 
 library(keras)
 ```
@@ -616,7 +616,8 @@ ytest = dtest$match
 La fonction de perte focal_loss est connue pour s'occuper de données non équilibrées. En prenant une valeur de gamma grande, on fait en sorte que les bonnes prédiction pour la classe 0 soit moins importantes cependant en augmantant gamma, on diminue fortement la fonction de perte ansi, au commencement même de l'entrainement, on peut avoir une fonction de perte proche de 0 et ainsi, pas efficace. Il faut donc trouver le meilleur gamma capable de donner plsu importance aux bonnes prédictions pour la classe 1 sans avoir une fonciton de perte trop petite et inutilisable.
 
 
-```{r }
+```{r include = False}
+
 #Optimisation de gamma
 
 # resultat pour gamma
@@ -677,6 +678,12 @@ history <- model %>% fit(
   validation_split = 0.2
 )
 
+```
+
+```{r, include = False}
+
+
+plot(history)
 
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest)
@@ -689,7 +696,8 @@ Les résultats sont assez mauvais, le problème étant que le modèle est très 
 
 On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
-```{r}
+```{r, include = False}
+
 # poids
 
 
@@ -719,6 +727,12 @@ history <- model %>% fit(
   validation_split = 0.2,
   class_weight=list("0"=1,"1"=6.0284857571)
 )
+```
+
+```{r}
+
+
+plot(history)
 
 
 #prédiction sur l'échantillon test
@@ -791,7 +805,7 @@ Ytest_rose = dtest$match
 
 Creation et mise en route du modèle
 
-```{r}
+```{r, include = False}
 # creation du modèle
 
 model <- keras_model_sequential()
@@ -821,6 +835,13 @@ history <- model %>% fit(
   batch_size =0.1,epochs = 100,
   validation_split = 0.1
 )
+
+```
+
+```{r include = False}
+
+plot(history)
+
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
@@ -884,7 +905,7 @@ Ytest_over = dtest$match
 
 
 # creation du modèle et mise en route
-```{r}
+```{r include = False}
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
@@ -912,6 +933,12 @@ history <- model %>% fit(
   batch_size =0.1,epochs = 100,
   validation_split = 0.1
 )
+
+```
+```{r}
+
+plot(history)
+
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
@@ -1041,6 +1068,18 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
 On va donc recréer une base d'entrainement et de test.
 Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
+
+```{r}
+#IMPORTATION JEU DE DONNEE
+df_mod=feature_eng()
+#var significatif 
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
+
+# Creation des bases de test et d'apprentissage
+
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+```
 
 ```{r}
 filterCtrl <- sbfControl(functions = ldaSBF, method = "repeatedcv", repeats = 5)

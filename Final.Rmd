@@ -263,10 +263,16 @@ f1 <- function (data, lev = NULL, model = NULL) {
 
 Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
+## Présentation de la base
+
 Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
 Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
+## Présentation de la base
+
 L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
+
+## Présentation de la base
 
 De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
 
@@ -627,6 +633,7 @@ f1_m=function(y_true, y_pred){
 La fonction de perte focal_loss est connue pour s'occuper de données non équilibrées. En prenant une valeur de gamma grande, on fait en sorte que les bonnes prédiction pour la classe 0 soit moins importantes cependant en augmantant gamma, on diminue fortement la fonction de perte ansi, au commencement même de l'entrainement, on peut avoir une fonction de perte proche de 0 et ainsi, pas efficace. Il faut donc trouver le meilleur gamma capable de donner plsu importance aux bonnes prédictions pour la classe 1 sans avoir une fonciton de perte trop petite et inutilisable.
 
 
+
 ```{r, include = FALSE}
 
 #Optimisation de gamma
@@ -691,6 +698,9 @@ history <- model %>% fit(
 
 ```
 
+## Résultats avec la fonction focal_loss
+
+
 ```{r, include = FALSE}
 
 
@@ -704,6 +714,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 ```
 
 Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre faon de modéliser ce problème.
+
+## Utilisation de poids
 
 On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
@@ -740,8 +752,9 @@ history <- model %>% fit(
 )
 ```
 
-```{r}
+## Résultats avec les poids
 
+```{r}
 
 plot(history)
 
@@ -773,7 +786,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 
 Passons maintenant aux différentes méthode d'échantillonange permetttant de ré équilibré les classes et commencant par la méthode d'échantillonage ROSE. Cette méthode crée une base de donnée équilibré par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
 
-Création des différentes bases nécessaires
+## Création des différentes bases nécessaires
 
 On change de base car il faut moins de variables pour le nombre d'individus pour que les méthodes de rééchantillonage fonctionne.
 
@@ -814,8 +827,7 @@ Xtest_rose = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 Ytest_rose = dtest$match
 ```
 
-Creation et mise en route du modèle
-
+## Resultat avec Rose
 ```{r, include = FALSE}
 # creation du modèle
 
@@ -861,7 +873,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile à implémenter.
 
-Meilleur modèle avec Rose trouvée :
+## Meilleur modèle avec Rose trouvée :
 
 ```{r}
 # méthode Rose
@@ -913,9 +925,8 @@ Xtest_over = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 Ytest_over = dtest$match
 ```
 
+## Résultat avec oversampling
 
-
-## creation du modèle et mise en route
 ```{r, include = FALSE}
 model <- keras_model_sequential()
 model %>% 
@@ -946,6 +957,7 @@ history <- model %>% fit(
 )
 
 ```
+
 ```{r}
 
 plot(history)
@@ -961,7 +973,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 Les résultats sont excellents avec cette méthode même avec des epochs faibles. APrès à partir de 1000 epochs, les résultats sont moins bons donc il faut faire attention.
 
-Meilleurs modèles avec la méthode de suréchantillonage :
+## Meilleurs modèles avec la méthode de suréchantillonage :
 
 
 Voici un modèle trouvée à 200 epochs, il va permettre de complémenter le modèle à 700 epochs pour la suite du code
@@ -985,6 +997,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 ```
 
+## Meilleurs modèles avec la méthode de suréchantillonage :
+
 Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5. Le nombre d'epochs est de 700.
 
 ```{r}
@@ -1006,10 +1020,12 @@ predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 
 ```
+
 ## Combinaison de modèles IA
 
 Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancer le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
 
+## Vote à la majorité
 
 Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_over_2" seul.
 ```{r}
@@ -1023,6 +1039,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
+## Vote à la majorité et meilleur seuil
+
 On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents meilleurs seuils qui maximisent le F1_score que nous avons trouvé précédemmen.On trouve ici un F1_score de 0.5928 ce qui est le meilleur modèle pour l'instant trouvé.
 
 ```{r}
@@ -1035,6 +1053,9 @@ predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>meille
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Combinaison des probabilités
+
 Maintenant, on utilise les probabilité données par les IA en les pondérant en fonction de leur F1_score respective permettant de donner plus de poids au meilleur modèle. Le F1_score est de 0.58 ce qui n'est pas incroyable.
 
 ```{r}
@@ -1049,6 +1070,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
+## Prise des deux modèles over avec vote
+
 On refait maintenant le même travail mais avec juste que les deux IA de suréchantillonage (les deux meilleurs et qui se complémentent bien en fonction de leur précision et sensitivité). On trouve un modèle incroyable en faisant un vote à la majorité avec un F1_score de 0.6065, une accuracy d'environ 87% et une sensitivité forte permettant de trouver des bons matchs.
 ```{r}
 predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
@@ -1059,6 +1082,10 @@ predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meil
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Prise des deux modèles over avec proba
+
+
 Ici, on utilise la pondération des probabilités comme vu précédemment mais avec que les deux modèles de suréchantillonage. On trouve un modèle avec un meilleur F1_score avec 0.6091 cependant l'accuracy est moins bonne ce qui est fait peut-être de ce modèle un moins bonne modèle.
 
 
@@ -1077,6 +1104,9 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 # Regression logistique
 
 Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
+
+# Regression logistique
+
 On va donc recréer une base d'entrainement et de test.
 Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
 

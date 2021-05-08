@@ -7,7 +7,7 @@ output:
   revealjs::revealjs_presentation:
     theme: league
     transition: fade
-    slideNumber : true
+    slideNumber : TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -180,10 +180,10 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
   
   for( i in seq(gamma_min, gamma_max, gamma_pas)){
     
-    focal_loss=function(y_true, y_pred){
+    focal_loss=function(y_TRUE, y_pred){
       gamma = i 
       print("gamma")
-      pt = y_pred * y_true + (1-y_pred) * (1-y_true)
+      pt = y_pred * y_TRUE + (1-y_pred) * (1-y_TRUE)
       print("pt")
       pt = k_clip(pt, 0, 1)
       print("pt2")
@@ -650,13 +650,13 @@ finalRL = caret::train(
   preProcess = c("scale"))
 ```
 
-```{r}
+```{r,echo=TRUE}
 confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
 ```
 
 Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
 
-```{r}
+```{r,echo=TRUE}
 confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
 ```
 
@@ -671,6 +671,14 @@ La regression logistique n'est clairement pas adaptée à la prédiction pour no
 L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
 
 ## Transformation de la base de donnée pour l'intelligence artificielle
+
+```{r, include=FALSE}
+# vous pouvez choisir le nombre d'epochs que vous voulez (plus d'epochs plus lent)
+# ne pas dépassez 700 environ pour éviter le surapprentissage
+
+epochs = 200
+```
+
 
 ```{r, include=FALSE}
 #IMPORTATION JEU DE DONNEE
@@ -700,24 +708,24 @@ ytest = dtest$match
 
 #Redéfinition des metric pour l'IA
 
-recall_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
-  recall = true_positives / (possible_positives + k_epsilon())
+recall_m=function(y_TRUE, y_pred){
+  TRUE_positives = k_sum(k_round(k_clip(y_TRUE * y_pred, 0, 1)))
+  possible_positives = k_sum(k_round(k_clip(y_TRUE, 0, 1)))
+  recall = TRUE_positives / (possible_positives + k_epsilon())
   return(recall)
 } 
-precision_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+precision_m=function(y_TRUE, y_pred){
+  TRUE_positives = k_sum(k_round(k_clip(y_TRUE * y_pred, 0, 1)))
   predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
-  precision = true_positives / (predicted_positives + k_epsilon())
+  precision = TRUE_positives / (predicted_positives + k_epsilon())
   return(precision)
 }
 
 # parametre beta a changer
-f1_m=function(y_true, y_pred){
+f1_m=function(y_TRUE, y_pred){
   beta = 1
-  precision = precision_m(y_true, y_pred)
-  recall = recall_m(y_true, y_pred)
+  precision = precision_m(y_TRUE, y_pred)
+  recall = recall_m(y_TRUE, y_pred)
   return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
 } 
 ```
@@ -741,11 +749,11 @@ La fonction de perte focal_loss est connue pour s'occuper de données non équil
 
 choix_gamma = 5
 
-focal_loss=function(y_true, y_pred){
+focal_loss=function(y_TRUE, y_pred){
   gamma = choix_gamma
   
   print("gamma")
-  pt = y_pred * y_true + (1-y_pred) * (1-y_true)
+  pt = y_pred * y_TRUE + (1-y_pred) * (1-y_TRUE)
   print("pt")
   pt = k_clip(pt, 0, 1)
   print("pt2")
@@ -786,7 +794,7 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = 200,
+  batch_size =0.05,epochs = epochs,
   validation_split = 0.2
 )
 
@@ -795,7 +803,7 @@ history <- model %>% fit(
 ## Résultats avec la fonction focal_loss
 
 
-```{r}
+```{r,echo=TRUE}
 
 plot(history)
 
@@ -839,7 +847,7 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = 200,
+  batch_size =0.05,epochs = epochs,
   validation_split = 0.2,
   class_weight=list("0"=1,"1"=6.0284857571)
 )
@@ -847,7 +855,7 @@ history <- model %>% fit(
 
 ## Résultats avec les poids
 
-```{r}
+```{r,echo=TRUE}
 
 plot(history)
 
@@ -859,13 +867,12 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 On obtient de bien meilleurs résulats, on peut changer le nombre d'epoch pour essayer d'obtenir encore de meilleur résultats. epochs à 200 n'est pas le meilleur paramètre, il est juste à cette valeur pour éviter d'avoir trop à attendre.Voici le meilleur modèle de poids :
 
 
-```{r}
+```{r,echo=TRUE}
 
 model_poids = load_model_hdf5("Modelisation/IA/model_f1_poids_35806_2.hdf5")
 
 l = seq(0.1,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_poids,xtrain)>s), ytrain, positive = "1"))
-f1_list
 
 meilleur_seuil_poids = l[which.max(f1_list)]
 f1_poids = f1_list[which.max(f1_list)]
@@ -948,13 +955,13 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_rose,  ytrain_rose, 
-  batch_size =0.1,epochs = 100,
+  batch_size =0.1,epochs = 200,
   validation_split = 0.1
 )
 
 ```
 
-```{r}
+```{r,echo=TRUE}
 
 plot(history)
 
@@ -968,14 +975,14 @@ On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile
 
 ##Meilleur modèle avec Rose trouvée :
 
-```{r}
+```{r,echo=TRUE}
 # méthode Rose
 
 model_rose = load_model_hdf5("Modelisation/IA/model_f1_rose_41365_2.hdf5")
 
 l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_rose,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_rose = l[which.max(f1_list)]
 f1_rose = f1_list[which.max(f1_list)]
@@ -1045,13 +1052,13 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 100,
+  batch_size =0.1,epochs = epochs,
   validation_split = 0.1
 )
 
 ```
 
-```{r}
+```{r,echo=TRUE}
 
 plot(history)
 
@@ -1075,10 +1082,12 @@ model_over_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
 
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_over_1 = l[which.max(f1_list)]
 f1_over_1 = f1_list[which.max(f1_list)]
+```
+```{r,echo=TRUE}
 
 print("prediction avec le meilleur seuil de f1_score")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
@@ -1099,10 +1108,12 @@ model_over_2 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
 
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_over_2 = l[which.max(f1_list)]
 f1_over_2 = f1_list[which.max(f1_list)]
+```
+```{r,echo=TRUE}
 
 print("prediction avec le meilleur seuil de f1_score")
 predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
@@ -1127,6 +1138,8 @@ predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>0.5)
                         +as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
                         >1.5)
 
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
@@ -1141,6 +1154,8 @@ predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>meille
                         +as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
                         +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
                         >1.5)
+```
+```{r,echo=TRUE}
 
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
@@ -1154,10 +1169,13 @@ Maintenant, on utilise les probabilité données par les IA en les pondérant en
 ```{r}
 # avec pondération sur les probas : 3 modèles
 
-predSimple = as.integer(f1_rose*predict_proba(model_rose,xtest_normal)
+score =  (f1_rose*predict_proba(model_rose,xtest_normal)
                         + f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
-                                   >(f1_rose+f1_over_1+f1_over_2)/2)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_rose+f1_over_1+f1_over_2)
+
+predSimple = as.integer(score>0.5)
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
@@ -1171,6 +1189,8 @@ predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meil
                         +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
                         >1)
 
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
@@ -1185,9 +1205,15 @@ Ici, on utilise la pondération des probabilités comme vu précédemment mais a
 ```{r}
 #  : 2 modèles : f1_score de 0.6091 >> meilleur modele a ce jour mais moins bonne précision
 
-predSimple = as.integer(f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
-                        >(f1_over_1+f1_over_2)/2)
+score = (f1_over_1*predict_proba(model_over_1,xtest_normal)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_over_1+f1_over_2)
+
+
+predSimple = as.integer(score>0.5)
+
+```
+```{r,echo=TRUE}
+
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))

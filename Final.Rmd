@@ -689,7 +689,7 @@ history <- model %>% fit(
 
 ```
 
-```{r, include = False}
+```{r, include = FALSE}
 
 
 plot(history)
@@ -705,7 +705,7 @@ Les résultats sont assez mauvais, le problème étant que le modèle est très 
 
 On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
-```{r, include = False}
+```{r, include = FALSE}
 
 # poids
 
@@ -814,7 +814,7 @@ Ytest_rose = dtest$match
 
 Creation et mise en route du modèle
 
-```{r, include = False}
+```{r, include = FALSE}
 # creation du modèle
 
 model <- keras_model_sequential()
@@ -847,7 +847,7 @@ history <- model %>% fit(
 
 ```
 
-```{r, include = False}
+```{r, include = FALSE}
 
 plot(history)
 
@@ -914,7 +914,7 @@ Ytest_over = dtest$match
 
 
 # creation du modèle et mise en route
-```{r, include = False}
+```{r, include = FALSE}
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%

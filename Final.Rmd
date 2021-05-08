@@ -586,11 +586,103 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 ```
 
+
+
+# Regression logistique
+
+Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
+
+# Regression logistique
+
+On va donc recréer une base d'entrainement et de test.
+Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
+
+
+```{r}
+filterCtrl <- sbfControl(functions = ldaSBF, method = "repeatedcv", repeats = 5)
+rfWithFilter <- sbf(match ~.,data=train_data, sbfControl = filterCtrl) 
+```
+
+L'object rfWithFilter contient de nombreuses données mais on s'intéresse uniquement aux variables selectionnées par *sbf*. On récupère ses variables :
+```{r}
+var_imp2 = rfWithFilter$variables$selectedVars
+var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
+```
+
+On passe de 110 variables explicatives à 44 variables ! 
+
+```{r}
+
+#nouvelles données d'entrainement
+dapp = train_data[,c("match",var_imp2)]
+#nouvelles données de test
+dtest = test_data[,c("match",var_imp2)]
+
+#Entrainement regression logistique
+RL_model1 = caret::train(
+  form = match ~ .,
+  data = dapp,
+  trControl = trainControl(method = "cv", number = 5,summaryFunction = f1),
+  metric = "F1",
+  method = "glm")
+
+caret::confusionMatrix(predict(RL_model1,dapp),dapp$match,positive = '1',mode = 'prec_recall')
+
+```
+
+Le modèle est particulièrement mauvais, même sur les données d'apprentissage. On arrive pas à détecter les match positifs.
+
+On utilise donc une méthode d'oversampling ROSE afin d'équilibrer les données (afin de garder une certaine cohérence, on considère 40% de matchs). On augmente la taille de notre échantillon d'apprentissage par la même occasion (on multiplie sa taille par 5).
+
+```{r}
+dapp2 <- ROSE(match ~ ., data=dapp, seed=123,N=round(5*nrow(dapp)),p=0.4)$data
+```
+
+On ajuste ensuite un modèle de regression logistique (comme précedemment) sur ces nouvelles données. On effectue une opération de scaling sur les données avant.
+
+```{r}
+finalRL = caret::train(
+  form = match ~ .,
+  data = dapp2,
+  trControl = trainControl(method = "cv", number = 10,summaryFunction = f1),
+  metric = "F1",
+  method = "glm",
+  preProcess = c("scale"))
+```
+
+```{r}
+confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
+```
+
+Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
+
+```{r}
+confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
+```
+
+La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+
+
+
+
+
 # Intelligence artificielle
 
 L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
 
 ## Transformation de la base de donnée pour l'intelligence artificielle
+
+```{r, include=FALSE}
+#IMPORTATION JEU DE DONNEE
+df_mod=feature_eng()
+#var significatif 
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
+
+# Creation des bases de test et d'apprentissage
+
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+```
 
 Les bases de données doivent transformé en numérique puis en matrix. 
 ```{r }
@@ -862,7 +954,7 @@ history <- model %>% fit(
 
 ```
 
-```{r, include = FALSE}
+```{r}
 
 plot(history)
 
@@ -874,7 +966,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile à implémenter.
 
-## Meilleur modèle avec Rose trouvée :
+##Meilleur modèle avec Rose trouvée :
 
 ```{r}
 # méthode Rose
@@ -1100,89 +1192,3 @@ predSimple = as.integer(f1_over_1*predict_proba(model_over_1,xtest_normal)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
-
-
-# Regression logistique
-
-Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
-
-# Regression logistique
-
-On va donc recréer une base d'entrainement et de test.
-Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
-
-```{r}
-#IMPORTATION JEU DE DONNEE
-df_mod=feature_eng()
-#var significatif 
-var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
-
-# Creation des bases de test et d'apprentissage
-
-resu=creationDesData(df_mod$df,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-```
-
-```{r}
-filterCtrl <- sbfControl(functions = ldaSBF, method = "repeatedcv", repeats = 5)
-rfWithFilter <- sbf(match ~.,data=train_data, sbfControl = filterCtrl) 
-```
-
-L'object rfWithFilter contient de nombreuses données mais on s'intéresse uniquement aux variables selectionnées par *sbf*. On récupère ses variables :
-```{r}
-var_imp2 = rfWithFilter$variables$selectedVars
-var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
-```
-
-On passe de 110 variables explicatives à 44 variables ! 
-
-```{r}
-
-#nouvelles données d'entrainement
-dapp = train_data[,c("match",var_imp2)]
-#nouvelles données de test
-dtest = test_data[,c("match",var_imp2)]
-
-#Entrainement regression logistique
-RL_model1 = caret::train(
-  form = match ~ .,
-  data = dapp,
-  trControl = trainControl(method = "cv", number = 5,summaryFunction = f1),
-  metric = "F1",
-  method = "glm")
-
-caret::confusionMatrix(predict(RL_model1,dapp),dapp$match,positive = '1',mode = 'prec_recall')
-
-```
-
-Le modèle est particulièrement mauvais, même sur les données d'apprentissage. On arrive pas à détecter les match positifs.
-
-On utilise donc une méthode d'oversampling ROSE afin d'équilibrer les données (afin de garder une certaine cohérence, on considère 40% de matchs). On augmente la taille de notre échantillon d'apprentissage par la même occasion (on multiplie sa taille par 5).
-
-```{r}
-dapp2 <- ROSE(match ~ ., data=dapp, seed=123,N=round(5*nrow(dapp)),p=0.4)$data
-```
-
-On ajuste ensuite un modèle de regression logistique (comme précedemment) sur ces nouvelles données. On effectue une opération de scaling sur les données avant.
-
-```{r}
-finalRL = caret::train(
-  form = match ~ .,
-  data = dapp2,
-  trControl = trainControl(method = "cv", number = 10,summaryFunction = f1),
-  metric = "F1",
-  method = "glm",
-  preProcess = c("scale"))
-```
-
-```{r}
-confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
-```
-
-Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
-
-```{r}
-confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
-```
-
-La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.

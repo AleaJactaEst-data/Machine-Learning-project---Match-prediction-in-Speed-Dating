@@ -13,14 +13,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Description du problème
+# Description du problème
 
 Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
 Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette étude afin que notre application mette en relation des personnes qui ont le plus de chance d'avoir un match.
 
 
-## Presentation de la base de données
+# Presentation de la base de données
 
 * Base de données recupérée sur [kaggle](https://www.kaggle.com/annavictoria/speed-dating-experiment) 
 * Données brutes : 
@@ -34,9 +34,9 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Transformation de la base pour la rendre exploitable (correction des données, nettoyage, creations des facteurs, etc...)
 * AJOUTER LES CHOSES REALISEES
 
-## Présentation et visualisation des donnees
+# Présentation et visualisation des donnees
 
-### Presentation
+## Presentation
 
 * Une ligne correspond aux données de 2 individus
 * Variable à expliquer *match* : 84% de 0 (pas de match entre le couple) et 16% de 1 (match) ---> données déséquilibrées
@@ -46,18 +46,18 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
     + centres d'intérêts des individus (cinéma, sport, etc...)
 // Eventuellement compléter
     
-### Visualisation
+## Visualisation
 
 // Mettre des images de ce qui a été fait et qques explications
 
-## Critères de performance
+# Critères de performance
 
 * Données déséquilibrées : 84% d'exactitude en prédisant que des 0 
 * Mettre l'accent sur le taux de match détecté :
     + Precision, Sensibilité et F1-Score
     + Ne pas négliger la performance globale
     
-## Regression Logistique
+# Regression Logistique
 
 * Modèle "naturel" pour une classification binaire
 * 100+ variables --> fléau de la dimension
@@ -67,7 +67,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 </center>
 * Passage de 100+ variables à 44 variables
 
-## Premier resultat
+# Premier resultat
 
 <center>
   <img src="img/sbf.png" style="vertical-align: middle;" width = "700"/>
@@ -76,7 +76,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Mauvaise performance au vu de nos critères
 * Hypothèse : cela est du au déséquilibre des données
 
-## Surenchantillonage (Oversampling)
+# Surenchantillonage (Oversampling)
 
 * Randomly Over Sampling Examples (ROSE) : equilibrage des données
 * "Nouvelle" base d'apprentissage
@@ -84,15 +84,15 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 * Regression Logistique normale inadaptée
 
-## Modèle de Theo ??
+# Modèle de Theo ??
 
-## XGBOOST
+# XGBOOST
 
-## Le meilleur pour la fin, l'IA
+# Le meilleur pour la fin, l'IA
 
-## Quelques mots pour comparer les algos
+# Quelques mots pour comparer les algos
 
-## Conclusion
+# Conclusion
 
 
 

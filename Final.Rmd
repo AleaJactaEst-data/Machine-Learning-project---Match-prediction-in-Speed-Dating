@@ -30,6 +30,8 @@ library(ggplot2)
 library(cramer)
 library(rcompanion)
 library(tensorflow)
+library(glmnet)
+library(pROC)
 #install_tensorflow() # si jamais vous n'avez jamais utilisé tensorflow, il faut l'installer avec cette commande
 
 library(keras)
@@ -795,6 +797,183 @@ confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_r
 La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
 
 
+
+# Regression de Lasso classique
+
+La Régression de Lasso est une régression pénalisée.
+En effet dans l'estimation des paramètres du modèle, on utilise également la méthode des moindres carrés avec une pénalité sur la norme de ces paramètres via un hyper-paramètre LAMBDA, positif.
+
+On entraine donc un modèle sur l'échantillon d'entrainement pour optimiser LAMBDA par Cross Validation.
+On retient le LAMBDA qui minimise l'erreur.
+Enfin, on réalise une prédiction sur l'échantillon de validation pour obtenir le score du modèle.
+
+```{r}
+#Parametres lambda a tester
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+L'Accuracy est bonne : 0.83.
+Cependant, le rappel (Recall) est très mauvais : cela signifie que le modèle prédit bien les 0 mais mal les 1.
+En effet, le jeu de données est déséquilibré car il y a beaucoup plus de 0 que de 1.
+Pour pallier à ce problème on fait un travail sur le sampling avec 3 méthodes : Rose, OverSampling & UnderSampling afin d'équilibrer le jeu de données et améliorer les prédictions.
+
+
+## Sampling sur le jeu de donnees avec ROSE
+
+```{r}
+#Sampling avec ROSE pour avoir un jeu de données plus équilibré
+data.rose <- ROSE(match ~ ., data = dapp, seed = 1)$data
+table(data.rose$match)
+```
+
+```{r}
+#Modele et test
+dapp1 = data.rose
+
+X <- model.matrix(match~., data=dapp1)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp1$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_rose <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_rose),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Avec un sampling Rose, l'Accuracy diminue.
+Cepedant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
+
+Testons les 2 autres méthodes : Over & Under.
+
+## Over & Under sampling
+
+```{r}
+#over sampling dataset
+dapp2 <- ovun.sample(match ~ ., data = dapp, method = "over",N = 4696)$data
+table(dapp2$match)
+#under sampling dataset
+dapp3 <- ovun.sample(match ~ ., data = dapp, method = "under", N = 934, seed = 1)$data
+table(dapp3$match)
+```
+
+### Avec OVER sampling
+
+```{r}
+X <- model.matrix(match~., data=dapp2)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp2$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_over <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_over),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Le modèle également mieux les 1, le rappel est donc meilleur que sans travail sur l'équilibrage de jeu de données.
+Toutefois, l'accuracy reste faible. 
+Pour comparer, on utilise enfin un UNDER sampling.
+
+### Avec UNDER sampling
+
+```{r}
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp3)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp3$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_under <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_under),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Le modèle prédit mieux les 1 que sans travail sur le sampling mais l'accuracy reste faible.
+Désormais, étudions d'autres modèles susceptibles d'obtenir de meilleurs scores.
+
+### Pour chaque methode de sampling : rose, over & under, on affiche la courbe ROC.
+
+```{r}
+roc1=roc(dtest$match, pred_rose)
+roc2=roc(dtest$match, pred_over)
+roc3=roc(dtest$match, pred_under)
+
+plot(roc1, col = 1, lty = 2, main = "ROC")
+plot(roc2, col = 2, lty = 2, add = TRUE)
+plot(roc3, col = 3, lty = 2, add = TRUE)
+
+legend("bottom",
+       legend=c("Rose", "Over", "Under"),
+       col=c(1,2,3),
+       lwd=4, cex =1, xpd = TRUE, horiz = FALSE)
+```
+
+Meme avec un sampling les résultats obtenus ne sont pas satisfaisants : les modèles prédisent trop de 0 et le "rappel" n'est pas bon. On s'oriente donc vers d'autres modèles.
 
 
 

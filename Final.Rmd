@@ -664,7 +664,56 @@ confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_r
 
 La regression logistique n'est clairement pas adaptée à la prédiction pour nos données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
 
+# svm
+```{r}
+df_mod=feature_eng()
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
+#Split
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
+
+# base rose
+
+df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
+resu=creationDesData(df_mod,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+
+```
+
+```{r} 
+library(e1071)
+dapp = train_data
+dtest = test_data
+
+#ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
+
+#tune_grid <- expand.grid(C=c(0.001,0.01,0.1,1), sigma = 1)
+
+#mod.svm <- caret::train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "YeoJohnson"), metric = "F1")
+
+
+#mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=1)
+#mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
+tune.out <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,1,10),gamma=0.1))
+summary(tune.out)
+mod.svm<-tune.out$best.model
+# resultat sur le modèle svm tester
+pred.svm = predict(mod.svm, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
+```
+
+```{r}
+TrueNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,1]
+FalseNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,2]
+TruePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,2]
+FalsePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,1]
+recall = TruePos/(TruePos+FalseNeg)
+precision = TruePos/(TruePos+FalsePos)
+beta=1
+f1score = 2*((precision*recall)/(precision+recall))
+f1score
+```
 
 
 

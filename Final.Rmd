@@ -237,7 +237,7 @@ creationDf_Couple = function(df,df_individu){
   return(df_couple)
 }
 
-######################################################################♠
+######################################################################
 
 creation_avg_ect=function(df_couple2){
   var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
@@ -452,7 +452,6 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 
 
 f1 <- function (data, lev = NULL, model = NULL) {
-  experience<<-data
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
@@ -461,56 +460,20 @@ f1 <- function (data, lev = NULL, model = NULL) {
 }
 
 
-
-recall_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
-  recall = true_positives / (possible_positives + k_epsilon())
-  return(recall)
-} 
-precision_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
-  precision = true_positives / (predicted_positives + k_epsilon())
-  return(precision)
-}
-
-# parametre beta a changer
-f1_m=function(y_true, y_pred){
-  beta = 1
-  precision = precision_m(y_true, y_pred)
-  recall = recall_m(y_true, y_pred)
-  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
-} 
-
 ```
 
+# Présentation de la base
 
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
-# Feature engineering
+Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
+Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
-```{r }
+L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
 
-feature_eng=function(){
-  df_couple2=importation()
-  
-  # Var numerique -----------------------------------------------------------
-  
-  resu=creation_avg_ect(df_couple2)
-  df_couple2=resu$df
-  var_num = resu$var_num
-    
-  # Var qualitative ---------------------------------------------------------
-  
-  resu=creation_same_ind(df_couple2)
-  df_couple2=resu$df
-  var_qual = resu$var_qual
+De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
 
-  
-  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
-}
-
-```
+Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
 
@@ -563,10 +526,31 @@ importation=function(){
 }
 ```
 
-# Présentation de la base
+# Feature engineering
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```{r }
+
+feature_eng=function(){
+  df_couple2=importation()
+  
+  # Var numerique -----------------------------------------------------------
+  
+  resu=creation_avg_ect(df_couple2)
+  df_couple2=resu$df
+  var_num = resu$var_num
+    
+  # Var qualitative ---------------------------------------------------------
+  
+  resu=creation_same_ind(df_couple2)
+  df_couple2=resu$df
+  var_qual = resu$var_qual
+
+  
+  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
+}
+
+```
+
 
 
 # Création de la base de donnée finale
@@ -609,6 +593,29 @@ ytrain = dapp$match
 
 xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest = dtest$match
+
+#Redéfinition des metric pour l'IA
+
+recall_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
+  recall = true_positives / (possible_positives + k_epsilon())
+  return(recall)
+} 
+precision_m=function(y_true, y_pred){
+  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
+  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
+  precision = true_positives / (predicted_positives + k_epsilon())
+  return(precision)
+}
+
+# parametre beta a changer
+f1_m=function(y_true, y_pred){
+  beta = 1
+  precision = precision_m(y_true, y_pred)
+  recall = recall_m(y_true, y_pred)
+  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
+} 
 ```
 
 # Intelligence artificielle avec la fonction focal_loss

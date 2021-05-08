@@ -1,3 +1,4 @@
+setwd("C:/Users/aebou/Documents/#GM/4GM/Apprentissage Statistiques/Projet-SpeedDating")
 importation=function(){
   pb=txtProgressBar(style = 3,width = 50)
   

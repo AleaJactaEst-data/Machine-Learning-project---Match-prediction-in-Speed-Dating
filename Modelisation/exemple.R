@@ -17,7 +17,6 @@ f1 <- function (data, lev = NULL, model = NULL) {
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
   resu=c("precision"=precision,"rappel"=recall,"F1"=f1_val)
-  print(resu)
   resu
 }
 

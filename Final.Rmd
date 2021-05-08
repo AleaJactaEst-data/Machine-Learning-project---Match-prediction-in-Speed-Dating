@@ -1,8 +1,13 @@
 ---
 title: "Dating_data : la data qui vous date"
-author: "Le super groupe de travaille fada de MACHINE LEARNINNNNNNG"
+author: "Florian JACTA, Hugo MICCINILLI, Theo DI PIAZZA, Aboa BOUADOU, Linh NGUYEN"
 date: "26/03/2021"
-output: html_document
+#output: html_document
+output:
+  revealjs::revealjs_presentation:
+    theme: league
+    transition: fade
+    slideNumber : TRUE
 ---
 
 ```{r setup, include=FALSE}
@@ -20,7 +25,7 @@ library(stringr)
 library(rcompanion)
 
 library(tensorflow)
-#install_tensorflow() # si jamais, utiliser tensorflow, il faut l'installer avec cette commande
+#install_tensorflow() # si jamais vous n'avez jamais utilisé tensorflow, il faut l'installer avec cette commande
 
 library(keras)
 ```
@@ -29,212 +34,7 @@ library(keras)
 # Fonctions nécessaire pour le bon déroulement du projet
 
 ```{r}
-
-# Gestion Variables
-
-# Undergra
-gestionUndergra = function(df){
-  df$undergra = as.character(df$undergra)
-  df$undergra[which(df$undergra!="")] = 1
-  df$undergra[which(df$undergra=="")] = 0
-  df$undergra = factor(df$undergra)
-  
-  return(df)
-}
-
-
-# Career
-gestionCareer = function(df){
-  #Si career : lawyer alors career_c : 1
-  df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
-  
-  #Si career : Economist alors career_c : 7 (with Finance...)
-  df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
-  
-  #Si career : tech professional  alors career_c : 7 (with Finance...)
-  df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
-  
-  #Suppression des autres individus : quasiment toutes leurs variables sont nulles
-  to_delete = df$career_c %>% is.na %>% which
-  df = df[!seq_len(nrow(df)) %in% to_delete, ]
-  
-  df %>% dplyr::select(c("career_c","career"))
-  
-  return(df)
-}
-
-
-
-# Income
-gestionIncome = function(df){
-  income_ = as.character(factor(df$income)) # on convertit en character les valeurs
-  
-  for(i in 1:dim(df)[1]){
-    string = income_[i] # on prend notre character
-    id  = nchar(string) - 6 # l'indice où est la virgule
-    if(id>0 & !is.na(id)){
-      str_sub(string, id, id) <- "" # on remplace la virgule par rien
-    }
-    income_[i] = string
-  }
-  
-  df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
-  
-  return(df)
-}
-
-
-
-# Essayer d'enlever les Na
-
-# Agregation
-agregationVariable = function(df){
-  df2=df
-  # CODE POUR GERER LE REGROUPEMENT DE VARIABLE
-  attribut=c("attr","sinc","intel","fun","amb","shar")
-  time=c(as.character(1:3),"s")
-  catg=c(1:5,7)
-  
-  var_gen=outer(attribut,outer(catg,paste0("_",time),paste0),paste0)
-  var_avg=outer(attribut,outer(catg,"_avg",paste0),paste0)
-  
-  #Etape 1 : harmoniser le systeme de point
-  for(k in c(1,2,4)){#theme qui ont besoin d'être harmonisé
-    for(i in 1:4){
-      if(all(var_gen[,k,i]%in%names(df2))){
-        df2[,var_gen[,k,i]]=sapply(var_gen[,k,i],function(v) 100*df2[,v]/apply(df2[,var_gen[,k,i]],1,sum,na.rm = T)) 
-      }
-    }
-  }
-  
-  #ETAPE2 : regroupement
-  for(k in 1:6){#catg/
-    for(i in 1:6){#attribut
-      v=var_gen[i,k,][which(var_gen[i,k,]%in%names(df2))]
-      df2[,var_avg[i,k,1]]= apply(df2[,v],1,mean,na.rm = T)
-    }
-  }
-  
-  #ETAPE3 : Supression des anciennes variables
-  v=as.vector(var_gen)
-  v=v[which(v%in%names(df2))]
-  df2=df2[,-which(names(df2)%in%v)]
-  
-  remove(attribut, catg, i, k, time, v, var_avg, var_gen)
-  
-  return(df2)
-}
-
-
-aggregateCarrer=function(df_individu){
-  #carrer_cd
-  law=c(1)
-  science=c(4,5,12)
-  huma=c(3,9,11,13,16)
-  art=c(6,17)
-  business=c(7,8)
-  chercheur=c(2)
-  sportif=c(14)
-  autre=c(10,15)
-  
-  df_individu$career_c2=8
-  df_individu$career_c2[df_individu$career_c%in%law]=1 #inutile mais bon
-  df_individu$career_c2[df_individu$career_c%in%science]=2
-  df_individu$career_c2[df_individu$career_c%in%huma]=3
-  df_individu$career_c2[df_individu$career_c%in%art]=4
-  df_individu$career_c2[df_individu$career_c%in%business]=5
-  df_individu$career_c2[df_individu$career_c%in%chercheur]=6
-  df_individu$career_c2[df_individu$career_c%in%sportif]=7
-  
-  return(df_individu)
-}
-
-aggregateField=function(df_individu){
-  #field_cd
-  law=c(1)
-  science=c(2,4,5,10)
-  huma=c(3,6,7,16,13,9)
-  art=c(14,15,17)
-  business=c(8)
-  autre=c(12,17)
-  
-  df_individu$field_cd2=6
-  df_individu$field_cd2[df_individu$field_cd%in%law]=1 #inutile mais bon
-  df_individu$field_cd2[df_individu$field_cd%in%science]=2
-  df_individu$field_cd2[df_individu$field_cd%in%huma]=3
-  df_individu$field_cd2[df_individu$field_cd%in%art]=4
-  df_individu$field_cd2[df_individu$field_cd%in%business]=5
-  
-  return(df_individu)
-}
-
-aggregateActivitie=function(df_individu){
-  #activite1
-  df_individu$act_sports=apply(df_individu,1,function(x) mean(x[c("sports","tvsports","exercise","hiking","yoga","clubbing")],na.rm=T))
-  df_individu$act_art=apply(df_individu,1,function(x) mean(x[c("museums","art","reading","theater","movies","concerts","music")],na.rm=T))
-  df_individu$act_autre=apply(df_individu,1,function(x) mean(x[c("dining","gaming","tv","shopping")],na.rm=T))
-  
-  #activite2
-  df_individu$act_casanier=apply(df_individu,1,function(x) mean(x[c("tvsports","gaming","tv","yoga","art","reading","music","movies")],na.rm=T))
-  df_individu$act_sortie=apply(df_individu,1,function(x) mean(x[c("sports","museums","theater","concerts","exercise","hiking","clubbing","dining","shopping")],na.rm=T))
-  
-  return(df_individu)
-}
-
-# Remplissage par la moyenne
-gestionDesNASystematiques = function(df_individu){
-  
-  for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
-    id = which(is.na(df_individu[,var]))
-    if(length(id)>0){
-      df_individu = df_individu[-id,]
-    }
-  }
-  
-  for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
-    id = which(is.na(df_individu[,var]))
-    m = mean(df_individu[-id,var])
-    df_individu[id,var] = m
-  }
-  
-  return(df_individu)
-}
-
-
-
-
-
-
-creationDf_Couple = function(df,df_individu){
-  df_couple_id = df[,c('iid','pid', 'match',"gender")]
-  df_couple_id=df_couple_id[order(df_couple_id$gender),]
-  
-  coupleDated = c()
-  ligneAenlever = c()
-  
-  for(i in 1:dim(df_couple_id)[1]){
-    iid = df_couple_id$iid[i]
-    pid = df_couple_id$pid[i]
-    
-    strCouple = paste(as.character(iid),as.character(pid))
-    strCoupleInv = paste(as.character(pid),as.character(iid))
-    
-    if(!(strCoupleInv %in% coupleDated)){
-      coupleDated = c(coupleDated,strCouple)
-    }
-    else{
-      ligneAenlever = c(ligneAenlever,i)
-    }
-  }
-  df_couple_id= df_couple_id[-ligneAenlever,]%>%select(-c("gender"))
-  
-  df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
-  
-  
-  return(df_couple)
-}
-
-######################################################################♠
+######################################################################
 
 creation_avg_ect=function(df_couple2){
   var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
@@ -380,10 +180,10 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
   
   for( i in seq(gamma_min, gamma_max, gamma_pas)){
     
-    focal_loss=function(y_true, y_pred){
+    focal_loss=function(y_TRUE, y_pred){
       gamma = i 
       print("gamma")
-      pt = y_pred * y_true + (1-y_pred) * (1-y_true)
+      pt = y_pred * y_TRUE + (1-y_pred) * (1-y_TRUE)
       print("pt")
       pt = k_clip(pt, 0, 1)
       print("pt2")
@@ -449,69 +249,244 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 
 
 f1 <- function (data, lev = NULL, model = NULL) {
-  experience<<-data
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
   f1_val <- F1_Score(data$pred, data$obs,positive ="1")
   resu=c("precision"=precision,"rappel"=recall,"F1"=f1_val)
-  print(resu)
   resu
 }
 
 
-
-recall_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  possible_positives = k_sum(k_round(k_clip(y_true, 0, 1)))
-  recall = true_positives / (possible_positives + k_epsilon())
-  return(recall)
-} 
-precision_m=function(y_true, y_pred){
-  true_positives = k_sum(k_round(k_clip(y_true * y_pred, 0, 1)))
-  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
-  precision = true_positives / (predicted_positives + k_epsilon())
-  return(precision)
-}
-
-# parametre beta a changer
-f1_m=function(y_true, y_pred){
-  beta = 1
-  precision = precision_m(y_true, y_pred)
-  recall = recall_m(y_true, y_pred)
-  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
-} 
-
 ```
 
+# Présentation de la base
 
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
-# Feature engineering
+## Présentation de la base
 
-```{r }
+Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
+Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
-feature_eng=function(){
-  df_couple2=importation()
-  
-  # Var numerique -----------------------------------------------------------
-  
-  resu=creation_avg_ect(df_couple2)
-  df_couple2=resu$df
-  var_num = resu$var_num
-    
-  # Var qualitative ---------------------------------------------------------
-  
-  resu=creation_same_ind(df_couple2)
-  df_couple2=resu$df
-  var_qual = resu$var_qual
+## Présentation de la base
 
-  
-  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
-}
+L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
 
-```
+## Présentation de la base
+
+De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
+
+Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
+Dans un premier temps il est nécéssaire de netoyer notre jeu de données et de le préparer pour répondre à notre probllématique
 
+## Gestion des valeur
+```{r}
+# Gestion Variables
+
+# Undergra
+gestionUndergra = function(df){
+  df$undergra = as.character(df$undergra)
+  df$undergra[which(df$undergra!="")] = 1
+  df$undergra[which(df$undergra=="")] = 0
+  df$undergra = factor(df$undergra)
+  
+  return(df)
+}
+
+# Career
+gestionCareer = function(df){
+  #Si career : lawyer alors career_c : 1
+  df = df %>% mutate(career_c = ifelse(career=="lawyer" | career=="law", 1, career_c))
+  
+  #Si career : Economist alors career_c : 7 (with Finance...)
+  df = df %>% mutate(career_c = ifelse(career=="Economist", 7, career_c))
+  
+  #Si career : tech professional  alors career_c : 7 (with Finance...)
+  df = df %>% mutate(career_c = ifelse(career=="tech professional", 5, career_c))
+  
+  #Suppression des autres individus : quasiment toutes leurs variables sont nulles
+  to_delete = df$career_c %>% is.na %>% which
+  df = df[!seq_len(nrow(df)) %in% to_delete, ]
+  
+  df %>% dplyr::select(c("career_c","career"))
+  
+  return(df)
+}
+
+# Income
+gestionIncome = function(df){
+  income_ = as.character(factor(df$income)) # on convertit en character les valeurs
+  
+  for(i in 1:dim(df)[1]){
+    string = income_[i] # on prend notre character
+    id  = nchar(string) - 6 # l'indice où est la virgule
+    if(id>0 & !is.na(id)){
+      str_sub(string, id, id) <- "" # on remplace la virgule par rien
+    }
+    income_[i] = string
+  }
+  
+  df$income = as.numeric(income_) # on change toutes les valeurs comme il faut dans le dataframe
+  
+  return(df)
+}
+```
+
+## #Homogénisation systeme de points
+```{r}
+agregationVariable = function(df){
+  df2=df
+  # CODE POUR GERER LE REGROUPEMENT DE VARIABLE
+  attribut=c("attr","sinc","intel","fun","amb","shar")
+  time=c(as.character(1:3),"s")
+  catg=c(1:5,7)
+  
+  var_gen=outer(attribut,outer(catg,paste0("_",time),paste0),paste0)
+  var_avg=outer(attribut,outer(catg,"_avg",paste0),paste0)
+  
+  #Etape 1 : harmoniser le systeme de point
+  for(k in c(1,2,4)){#theme qui ont besoin d'être harmonisé
+    for(i in 1:4){
+      if(all(var_gen[,k,i]%in%names(df2))){
+        df2[,var_gen[,k,i]]=sapply(var_gen[,k,i],function(v) 100*df2[,v]/apply(df2[,var_gen[,k,i]],1,sum,na.rm = T)) 
+      }
+    }
+  }
+  
+  #ETAPE2 : regroupement
+  for(k in 1:6){#catg/
+    for(i in 1:6){#attribut
+      v=var_gen[i,k,][which(var_gen[i,k,]%in%names(df2))]
+      df2[,var_avg[i,k,1]]= apply(df2[,v],1,mean,na.rm = T)
+    }
+  }
+  
+  #ETAPE3 : Supression des anciennes variables
+  v=as.vector(var_gen)
+  v=v[which(v%in%names(df2))]
+  df2=df2[,-which(names(df2)%in%v)]
+  
+  remove(attribut, catg, i, k, time, v, var_avg, var_gen)
+  
+  return(df2)
+}
+```
+
+## Aggregation
+```{r}
+aggregateCarrer=function(df_individu){
+  #carrer_cd
+  law=c(1)
+  science=c(4,5,12)
+  huma=c(3,9,11,13,16)
+  art=c(6,17)
+  business=c(7,8)
+  chercheur=c(2)
+  sportif=c(14)
+  autre=c(10,15)
+  
+  df_individu$career_c2=8
+  df_individu$career_c2[df_individu$career_c%in%law]=1 #inutile mais bon
+  df_individu$career_c2[df_individu$career_c%in%science]=2
+  df_individu$career_c2[df_individu$career_c%in%huma]=3
+  df_individu$career_c2[df_individu$career_c%in%art]=4
+  df_individu$career_c2[df_individu$career_c%in%business]=5
+  df_individu$career_c2[df_individu$career_c%in%chercheur]=6
+  df_individu$career_c2[df_individu$career_c%in%sportif]=7
+  
+  return(df_individu)
+}
+
+aggregateField=function(df_individu){
+  #field_cd
+  law=c(1)
+  science=c(2,4,5,10)
+  huma=c(3,6,7,16,13,9)
+  art=c(14,15,17)
+  business=c(8)
+  autre=c(12,17)
+  
+  df_individu$field_cd2=6
+  df_individu$field_cd2[df_individu$field_cd%in%law]=1 #inutile mais bon
+  df_individu$field_cd2[df_individu$field_cd%in%science]=2
+  df_individu$field_cd2[df_individu$field_cd%in%huma]=3
+  df_individu$field_cd2[df_individu$field_cd%in%art]=4
+  df_individu$field_cd2[df_individu$field_cd%in%business]=5
+  
+  return(df_individu)
+}
+
+aggregateActivitie=function(df_individu){
+  #activite1
+  df_individu$act_sports=apply(df_individu,1,function(x) mean(x[c("sports","tvsports","exercise","hiking","yoga","clubbing")],na.rm=T))
+  df_individu$act_art=apply(df_individu,1,function(x) mean(x[c("museums","art","reading","theater","movies","concerts","music")],na.rm=T))
+  df_individu$act_autre=apply(df_individu,1,function(x) mean(x[c("dining","gaming","tv","shopping")],na.rm=T))
+  
+  #activite2
+  df_individu$act_casanier=apply(df_individu,1,function(x) mean(x[c("tvsports","gaming","tv","yoga","art","reading","music","movies")],na.rm=T))
+  df_individu$act_sortie=apply(df_individu,1,function(x) mean(x[c("sports","museums","theater","concerts","exercise","hiking","clubbing","dining","shopping")],na.rm=T))
+  
+  return(df_individu)
+}
+```
+
+## Gestion des NA
+```{r}
+# Remplissage par la moyenne
+gestionDesNASystematiques = function(df_individu){
+  
+  for(var in c("age","field_cd", "date", "amb2_avg", "shar2_avg")){
+    id = which(is.na(df_individu[,var]))
+    if(length(id)>0){
+      df_individu = df_individu[-id,]
+    }
+  }
+  
+  for(var in c("attr4_avg", "sinc4_avg", "intel4_avg", "fun4_avg", "amb4_avg", "shar4_avg", "attr5_avg", "sinc5_avg", "intel5_avg", "fun5_avg", "amb5_avg")){
+    id = which(is.na(df_individu[,var]))
+    m = mean(df_individu[-id,var])
+    df_individu[id,var] = m
+  }
+  
+  return(df_individu)
+}
+```
+
+## Creation des couples
+```{r}
+creationDf_Couple = function(df,df_individu){
+  df_couple_id = df[,c('iid','pid', 'match',"gender")]
+  df_couple_id=df_couple_id[order(df_couple_id$gender),]
+  
+  coupleDated = c()
+  ligneAenlever = c()
+  
+  for(i in 1:dim(df_couple_id)[1]){
+    iid = df_couple_id$iid[i]
+    pid = df_couple_id$pid[i]
+    
+    strCouple = paste(as.character(iid),as.character(pid))
+    strCoupleInv = paste(as.character(pid),as.character(iid))
+    
+    if(!(strCoupleInv %in% coupleDated)){
+      coupleDated = c(coupleDated,strCouple)
+    }
+    else{
+      ligneAenlever = c(ligneAenlever,i)
+    }
+  }
+  df_couple_id= df_couple_id[-ligneAenlever,]%>%select(-c("gender"))
+  
+  df_couple = merge(merge(df_couple_id, df_individu, by = 'iid'), df_individu, by.x = 'pid', by.y = 'iid')
+  
+  
+  return(df_couple)
+}
+```
+
+## Fonction du prepocessing
 ```{r}
 importation=function(){
   pb=txtProgressBar(style = 3,width = 50)
@@ -561,19 +536,42 @@ importation=function(){
 }
 ```
 
-# Présentation de la base
+# Feature engineering
 
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```{r }
+
+feature_eng=function(){
+  df_couple2=importation()
+  
+  # Var numerique -----------------------------------------------------------
+  
+  resu=creation_avg_ect(df_couple2)
+  df_couple2=resu$df
+  var_num = resu$var_num
+    
+  # Var qualitative ---------------------------------------------------------
+  
+  resu=creation_same_ind(df_couple2)
+  df_couple2=resu$df
+  var_qual = resu$var_qual
+
+  
+  return(list("df"=df_couple2,"var_num"=var_num,"var_qual"=var_qual))
+}
+
+```
+
 
 
 # Création de la base de donnée finale
 
-feature_eng() permet de prendre notre base de donnée corrigé, transformé, vidé de ces Na, etc... Elle change des formats, mets les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétrie du modèle (une paire apparait deux fois), elle crée des variables de distances et de moyenne des varaibles numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
+feature_eng() permet de prendre notre base de donnée corrigée, transformée, vidée de ces Na, etc... Elle change des formats, met les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétries du modèle (une paire apparait deux fois), elle crée des variables de distance et de moyenne des variables numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
 
-feature_selection() va permettre de donner toutes les varaiables non significatifs à partir d'un seuil. Les variables numériques et factorielles ne sont pas testé de la même façon.
+# Création de la base de donnée finale
 
-creationDesData() va permettre de créer notre base finale avec aussi les base de test et d'apprentissage.
+feature_selection() va permettre de donner toutes les varaiables non significatifs à partir d'un seuil. Les variables numériques et factorielles ne sont pas testées de la même façon.
+
+creationDesData() va permettre de créer notre base finale avec aussi les bases de test et d'apprentissage.
 
 
 ```{r}
@@ -588,11 +586,111 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 ```
 
-## Intelligence artificielle
+
+
+# Regression logistique
+
+Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
+
+# Regression logistique
+
+On va donc recréer une base d'entrainement et de test.
+Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
+
+
+```{r}
+filterCtrl <- sbfControl(functions = ldaSBF, method = "repeatedcv", repeats = 5)
+rfWithFilter <- sbf(match ~.,data=train_data, sbfControl = filterCtrl) 
+```
+
+L'object rfWithFilter contient de nombreuses données mais on s'intéresse uniquement aux variables selectionnées par *sbf*. On récupère ses variables :
+```{r}
+var_imp2 = rfWithFilter$variables$selectedVars
+var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
+```
+
+On passe de 110 variables explicatives à 44 variables ! 
+
+```{r}
+
+#nouvelles données d'entrainement
+dapp = train_data[,c("match",var_imp2)]
+#nouvelles données de test
+dtest = test_data[,c("match",var_imp2)]
+
+#Entrainement regression logistique
+RL_model1 = caret::train(
+  form = match ~ .,
+  data = dapp,
+  trControl = trainControl(method = "cv", number = 5,summaryFunction = f1),
+  metric = "F1",
+  method = "glm")
+
+caret::confusionMatrix(predict(RL_model1,dapp),dapp$match,positive = '1',mode = 'prec_recall')
+
+```
+
+Le modèle est particulièrement mauvais, même sur les données d'apprentissage. On arrive pas à détecter les match positifs.
+
+On utilise donc une méthode d'oversampling ROSE afin d'équilibrer les données (afin de garder une certaine cohérence, on considère 40% de matchs). On augmente la taille de notre échantillon d'apprentissage par la même occasion (on multiplie sa taille par 5).
+
+```{r}
+dapp2 <- ROSE(match ~ ., data=dapp, seed=123,N=round(5*nrow(dapp)),p=0.4)$data
+```
+
+On ajuste ensuite un modèle de regression logistique (comme précedemment) sur ces nouvelles données. On effectue une opération de scaling sur les données avant.
+
+```{r}
+finalRL = caret::train(
+  form = match ~ .,
+  data = dapp2,
+  trControl = trainControl(method = "cv", number = 10,summaryFunction = f1),
+  metric = "F1",
+  method = "glm",
+  preProcess = c("scale"))
+```
+
+```{r,echo=TRUE}
+confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
+```
+
+Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
+
+```{r,echo=TRUE}
+confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
+```
+
+La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+
+
+
+
+
+# Intelligence artificielle
 
 L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
 
-# Transformation de la base de donnée pour l'intelligence artificielle
+## Transformation de la base de donnée pour l'intelligence artificielle
+
+```{r, include=FALSE}
+# vous pouvez choisir le nombre d'epochs que vous voulez (plus d'epochs plus lent)
+# ne pas dépassez 700 environ pour éviter le surapprentissage
+
+epochs = 200
+```
+
+
+```{r, include=FALSE}
+#IMPORTATION JEU DE DONNEE
+df_mod=feature_eng()
+#var significatif 
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
+
+# Creation des bases de test et d'apprentissage
+
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+```
 
 Les bases de données doivent transformé en numérique puis en matrix. 
 ```{r }
@@ -607,14 +705,39 @@ ytrain = dapp$match
 
 xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest = dtest$match
+
+#Redéfinition des metric pour l'IA
+
+recall_m=function(y_TRUE, y_pred){
+  TRUE_positives = k_sum(k_round(k_clip(y_TRUE * y_pred, 0, 1)))
+  possible_positives = k_sum(k_round(k_clip(y_TRUE, 0, 1)))
+  recall = TRUE_positives / (possible_positives + k_epsilon())
+  return(recall)
+} 
+precision_m=function(y_TRUE, y_pred){
+  TRUE_positives = k_sum(k_round(k_clip(y_TRUE * y_pred, 0, 1)))
+  predicted_positives = k_sum(k_round(k_clip(y_pred, 0, 1)))
+  precision = TRUE_positives / (predicted_positives + k_epsilon())
+  return(precision)
+}
+
+# parametre beta a changer
+f1_m=function(y_TRUE, y_pred){
+  beta = 1
+  precision = precision_m(y_TRUE, y_pred)
+  recall = recall_m(y_TRUE, y_pred)
+  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
+} 
 ```
 
-# Intelligence artificielle avec la fonction focal_loss
+## Intelligence artificielle avec la fonction focal_loss
 
 La fonction de perte focal_loss est connue pour s'occuper de données non équilibrées. En prenant une valeur de gamma grande, on fait en sorte que les bonnes prédiction pour la classe 0 soit moins importantes cependant en augmantant gamma, on diminue fortement la fonction de perte ansi, au commencement même de l'entrainement, on peut avoir une fonction de perte proche de 0 et ainsi, pas efficace. Il faut donc trouver le meilleur gamma capable de donner plsu importance aux bonnes prédictions pour la classe 1 sans avoir une fonciton de perte trop petite et inutilisable.
 
 
-```{r }
+
+```{r, include = FALSE}
+
 #Optimisation de gamma
 
 # resultat pour gamma
@@ -626,11 +749,11 @@ La fonction de perte focal_loss est connue pour s'occuper de données non équil
 
 choix_gamma = 5
 
-focal_loss=function(y_true, y_pred){
+focal_loss=function(y_TRUE, y_pred){
   gamma = choix_gamma
   
   print("gamma")
-  pt = y_pred * y_true + (1-y_pred) * (1-y_true)
+  pt = y_pred * y_TRUE + (1-y_pred) * (1-y_TRUE)
   print("pt")
   pt = k_clip(pt, 0, 1)
   print("pt2")
@@ -671,10 +794,18 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = 200,
+  batch_size =0.05,epochs = epochs,
   validation_split = 0.2
 )
 
+```
+
+## Résultats avec la fonction focal_loss
+
+
+```{r,echo=TRUE}
+
+plot(history)
 
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest)
@@ -685,9 +816,12 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 
 Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre faon de modéliser ce problème.
 
+## Utilisation de poids
+
 On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
-```{r}
+```{r, include = FALSE}
+
 # poids
 
 
@@ -713,10 +847,17 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = 200,
+  batch_size =0.05,epochs = epochs,
   validation_split = 0.2,
   class_weight=list("0"=1,"1"=6.0284857571)
 )
+```
+
+## Résultats avec les poids
+
+```{r,echo=TRUE}
+
+plot(history)
 
 
 #prédiction sur l'échantillon test
@@ -726,13 +867,12 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 On obtient de bien meilleurs résulats, on peut changer le nombre d'epoch pour essayer d'obtenir encore de meilleur résultats. epochs à 200 n'est pas le meilleur paramètre, il est juste à cette valeur pour éviter d'avoir trop à attendre.Voici le meilleur modèle de poids :
 
 
-```{r}
+```{r,echo=TRUE}
 
 model_poids = load_model_hdf5("Modelisation/IA/model_f1_poids_35806_2.hdf5")
 
 l = seq(0.1,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_poids,xtrain)>s), ytrain, positive = "1"))
-f1_list
 
 meilleur_seuil_poids = l[which.max(f1_list)]
 f1_poids = f1_list[which.max(f1_list)]
@@ -742,11 +882,11 @@ predSimple = as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 ```
 
-# Intelligence artificielle avec méthode de Sampling : Rose
+## Intelligence artificielle avec méthode de Sampling : Rose
 
 Passons maintenant aux différentes méthode d'échantillonange permetttant de ré équilibré les classes et commencant par la méthode d'échantillonage ROSE. Cette méthode crée une base de donnée équilibré par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
 
-Création des différentes bases nécessaires
+## Création des différentes bases nécessaires
 
 On change de base car il faut moins de variables pour le nombre d'individus pour que les méthodes de rééchantillonage fonctionne.
 
@@ -787,9 +927,8 @@ Xtest_rose = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 Ytest_rose = dtest$match
 ```
 
-Creation et mise en route du modèle
-
-```{r}
+## Resultat avec Rose
+```{r, include = FALSE}
 # creation du modèle
 
 model <- keras_model_sequential()
@@ -816,9 +955,16 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_rose,  ytrain_rose, 
-  batch_size =0.1,epochs = 100,
+  batch_size =0.1,epochs = 200,
   validation_split = 0.1
 )
+
+```
+
+```{r,echo=TRUE}
+
+plot(history)
+
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
@@ -827,16 +973,16 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile à implémenter.
 
-Meilleur modèle avec Rose trouvée :
+##Meilleur modèle avec Rose trouvée :
 
-```{r}
+```{r,echo=TRUE}
 # méthode Rose
 
 model_rose = load_model_hdf5("Modelisation/IA/model_f1_rose_41365_2.hdf5")
 
 l = seq(0.05,0.95,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_rose,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_rose = l[which.max(f1_list)]
 f1_rose = f1_list[which.max(f1_list)]
@@ -846,7 +992,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 ```
 
 
-# Intelligence artificielle avec méthode d'échantillonage : suréchantillonage
+## Intelligence artificielle avec méthode d'échantillonage : suréchantillonage
 
 Pour les mêmes raisons, on change de base.
 
@@ -879,10 +1025,9 @@ Xtest_over = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 Ytest_over = dtest$match
 ```
 
+## Résultat avec oversampling
 
-
-# creation du modèle et mise en route
-```{r}
+```{r, include = FALSE}
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
@@ -907,9 +1052,16 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_over,  ytrain_over, 
-  batch_size =0.1,epochs = 100,
+  batch_size =0.1,epochs = epochs,
   validation_split = 0.1
 )
+
+```
+
+```{r,echo=TRUE}
+
+plot(history)
+
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
@@ -921,19 +1073,21 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 Les résultats sont excellents avec cette méthode même avec des epochs faibles. APrès à partir de 1000 epochs, les résultats sont moins bons donc il faut faire attention.
 
-Meilleurs modèles avec la méthode de suréchantillonage :
+## Meilleurs modèles avec la méthode de suréchantillonage :
 
 
-Voiciun modèle trouvée à 200 epochs, il va permettre de complémenter le modèle à 700 epochs pour la suite du code
+Voici un modèle trouvée à 200 epochs, il va permettre de complémenter le modèle à 700 epochs pour la suite du code
 ```{r}
 model_over_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
 
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_over_1 = l[which.max(f1_list)]
 f1_over_1 = f1_list[which.max(f1_list)]
+```
+```{r,echo=TRUE}
 
 print("prediction avec le meilleur seuil de f1_score")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
@@ -945,6 +1099,8 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 ```
 
+## Meilleurs modèles avec la méthode de suréchantillonage :
+
 Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5. Le nombre d'epochs est de 700.
 
 ```{r}
@@ -952,10 +1108,12 @@ model_over_2 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
 
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
-f1_list
+
 
 meilleur_seuil_over_2 = l[which.max(f1_list)]
 f1_over_2 = f1_list[which.max(f1_list)]
+```
+```{r,echo=TRUE}
 
 print("prediction avec le meilleur seuil de f1_score")
 predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
@@ -966,10 +1124,12 @@ predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 
 ```
-# Combinaison de modèles IA
+
+## Combinaison de modèles IA
 
 Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancer le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
 
+## Vote à la majorité
 
 Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_over_2" seul.
 ```{r}
@@ -978,10 +1138,14 @@ predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>0.5)
                         +as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
                         >1.5)
 
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Vote à la majorité et meilleur seuil
 
 On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents meilleurs seuils qui maximisent le F1_score que nous avons trouvé précédemmen.On trouve ici un F1_score de 0.5928 ce qui est le meilleur modèle pour l'instant trouvé.
 
@@ -990,24 +1154,34 @@ predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>meille
                         +as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
                         +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
                         >1.5)
+```
+```{r,echo=TRUE}
 
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Combinaison des probabilités
+
 Maintenant, on utilise les probabilité données par les IA en les pondérant en fonction de leur F1_score respective permettant de donner plus de poids au meilleur modèle. Le F1_score est de 0.58 ce qui n'est pas incroyable.
 
 ```{r}
 # avec pondération sur les probas : 3 modèles
 
-predSimple = as.integer(f1_rose*predict_proba(model_rose,xtest_normal)
+score =  (f1_rose*predict_proba(model_rose,xtest_normal)
                         + f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
-                                   >(f1_rose+f1_over_1+f1_over_2)/2)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_rose+f1_over_1+f1_over_2)
+
+predSimple = as.integer(score>0.5)
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Prise des deux modèles over avec vote
 
 On refait maintenant le même travail mais avec juste que les deux IA de suréchantillonage (les deux meilleurs et qui se complémentent bien en fonction de leur précision et sensitivité). On trouve un modèle incroyable en faisant un vote à la majorité avec un F1_score de 0.6065, une accuracy d'environ 87% et une sensitivité forte permettant de trouver des bons matchs.
 ```{r}
@@ -1015,19 +1189,31 @@ predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meil
                         +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
                         >1)
 
+```
+```{r,echo=TRUE}
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
+
+## Prise des deux modèles over avec proba
+
+
 Ici, on utilise la pondération des probabilités comme vu précédemment mais avec que les deux modèles de suréchantillonage. On trouve un modèle avec un meilleur F1_score avec 0.6091 cependant l'accuracy est moins bonne ce qui est fait peut-être de ce modèle un moins bonne modèle.
 
 
 ```{r}
 #  : 2 modèles : f1_score de 0.6091 >> meilleur modele a ce jour mais moins bonne précision
 
-predSimple = as.integer(f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal)
-                        >(f1_over_1+f1_over_2)/2)
+score = (f1_over_1*predict_proba(model_over_1,xtest_normal)
+                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_over_1+f1_over_2)
+
+
+predSimple = as.integer(score>0.5)
+
+```
+```{r,echo=TRUE}
+
 
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))

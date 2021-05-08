@@ -1,0 +1,126 @@
+title: "Projet apprentissage statistiques - Etude SpeedDating"
+author: "Florian JACTA, Hugo MICCINILLI, Theo DI PIAZZA, Aboa BOUADOU, Linh NGUYEN"
+date: '2021'
+output:
+  ioslides_presentation: default
+  theme: league
+  beamer_presentation: default
+  slidy_presentation: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Description du problème
+
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+
+Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette étude afin que notre application mette en relation des personnes qui ont le plus de chance d'avoir un match.
+
+
+## Presentation de la base de données
+
+* Base de données recupérée sur [kaggle](https://www.kaggle.com/annavictoria/speed-dating-experiment) 
+* Données brutes : 
+    + 8379 lignes et 195 variables
+    + variable à expliquer : match
+    + Variables explicatives : 73 variables de type identification
+* Nécessité de nettoyer en profondeur les données
+
+## Preprocessing 
+
+* Transformation de la base pour la rendre exploitable (correction des données, nettoyage, creations des facteurs, etc...)
+* AJOUTER LES CHOSES REALISEES
+
+## Présentation et visualisation des donnees
+
+### Presentation
+
+* Une ligne correspond aux données de 2 individus
+* Variable à expliquer *match* : 84% de 0 (pas de match entre le couple) et 16% de 1 (match) ---> données déséquilibrées
+* Différents types de variables caractérisant :
+    + comment les individus s'évaluent eux même (attractivité, intelligence, etc...) 
+    + ce que les individus recherchent chez leur potentiel partenaire
+    + centres d'intérêts des individus (cinéma, sport, etc...)
+// Eventuellement compléter
+
+### Visualisation
+
+// Mettre des images de ce qui a été fait et qques explications
+
+## Critères de performance
+
+* Données déséquilibrées : 84% d'exactitude en prédisant que des 0 
+* Mettre l'accent sur le taux de match détecté :
+    + Precision, Sensibilité et F1-Score
+    + Ne pas négliger la performance globale
+
+## Regression Logistique
+
+* Modèle "naturel" pour une classification binaire
+* 100+ variables --> fléau de la dimension
+* Reduction du nombre de variables avec **caret**
+<center>
+  <img src="img/sbf.png" style="vertical-align: middle;" width = "700"/>
+</center>
+* Passage de 100+ variables à 44 variables
+
+## Premier resultat
+
+<center>
+  <img src="img/sbf.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
+* Mauvaise performance au vu de nos critères
+* Hypothèse : cela est du au déséquilibre des données
+
+## Surenchantillonage (Oversampling)
+
+* Randomly Over Sampling Examples (ROSE) : equilibrage des données
+* "Nouvelle" base d'apprentissage
+* Ajustement d'un nouveau modèle et meilleurs résultats
+
+* Regression Logistique normale inadaptée
+
+## Modèle de Theo ??
+
+## XGBOOST
+
+## Le meilleur pour la fin, l'IA
+
+* Une ligne correspond aux données de 2 individus
+* Variable à expliquer *match* : 84% de 0 (pas de match entre le couple) et 16% de 1 (match) ---> données déséquilibrées
+* Différents types de variables caractérisant :
+    + comment les individus s'évaluent eux même (attractivité, intelligence, etc...) 
+    + ce que les individus recherchent chez leur potentiel partenaire
+    + centres d'intérêts des individus (cinéma, sport, etc...)
+
+### Résultat avec oversampling
+
+### Résultat avec oversampling
+
+### Résultat avec oversampling
+
+### Intelligence artificielle avec méthode d'échantillonage : suréchantillonage
+
+### Résultat avec oversampling
+
+### Meilleurs modèles avec la méthode de suréchantillonage :
+
+### Combinaison de modèles IA
+
+### Vote à la majorité
+
+### Vote à la majorité et meilleur seuil
+
+### Combinaison des probabilités
+
+### Prise des deux modèles over avec vote
+
+### Prise des deux modèles over avec proba
+
+## Quelques mots pour comparer les algos
+
+## Conclusion
+

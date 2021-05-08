@@ -262,12 +262,12 @@ f1 <- function (data, lev = NULL, model = NULL) {
 
 # Présentation de la base
 
-Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
 ## Présentation de la base
 
-Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
-Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
+Chaque ligne de ce jeu données représente une rencontre entre un individu principal et un individu secondaire. 
+Pendant les événements, les participants ont un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin des quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une variable binaire indiquant si les deux partenaires souhaitent se revoir. On leur a également demandé d'évaluer leur partenaire de dating sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
 ## Présentation de la base
 
@@ -280,9 +280,10 @@ De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant 
 Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
-Dans un premier temps il est nécéssaire de netoyer notre jeu de données et de le préparer pour répondre à notre probllématique
 
-## Gestion des valeur
+Dans un premier temps il est nécéssaire de nettoyer notre jeu de données et de le préparer pour répondre à notre problématique
+
+## Gestion des valeurs 
 ```{r}
 # Gestion Variables
 
@@ -335,7 +336,7 @@ gestionIncome = function(df){
 }
 ```
 
-## #Homogénisation systeme de points
+## #Homogénéisation systeme de points
 ```{r}
 agregationVariable = function(df){
   df2=df
@@ -724,7 +725,7 @@ Les valeurs sont très peu significatives donc pas de problème !
 
 # Regression logistique
 
-Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
+Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
 
 # Regression logistique
 
@@ -744,8 +745,9 @@ var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
 ```
 
 On passe de 110 variables explicatives à 44 variables ! 
+On ajuste un modèle de regression logistique sur les nouvelles données obtenues et on observe les performances du modèle.
 
-```{r}
+```{r,echo=FALSE}
 
 #nouvelles données d'entrainement
 dapp = train_data[,c("match",var_imp2)]
@@ -774,7 +776,7 @@ dapp2 <- ROSE(match ~ ., data=dapp, seed=123,N=round(5*nrow(dapp)),p=0.4)$data
 
 On ajuste ensuite un modèle de regression logistique (comme précedemment) sur ces nouvelles données. On effectue une opération de scaling sur les données avant.
 
-```{r}
+```{r,echo=FALSE}
 finalRL = caret::train(
   form = match ~ .,
   data = dapp2,
@@ -784,19 +786,68 @@ finalRL = caret::train(
   preProcess = c("scale"))
 ```
 
-```{r,echo=TRUE}
+```{r,echo =FALSE}
 confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
 ```
 
 Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
 
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
 ```
 
-La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+La regression logistique n'est clairement pas adaptée à la prédiction pour nos données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+
+# svm
+```{r}
+df_mod=feature_eng()
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
+#Split
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 
+# base rose
+
+df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
+resu=creationDesData(df_mod,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp
+
+```
+
+```{r} 
+library(e1071)
+dapp = train_data
+dtest = test_data
+
+#ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
+
+#tune_grid <- expand.grid(C=c(0.001,0.01,0.1,1), sigma = 1)
+
+#mod.svm <- caret::train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "YeoJohnson"), metric = "F1")
+
+
+#mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=1)
+#mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
+tune.out <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,1,10),gamma=0.1))
+summary(tune.out)
+mod.svm<-tune.out$best.model
+# resultat sur le modèle svm tester
+pred.svm = predict(mod.svm, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
+```
+
+```{r}
+TrueNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,1]
+FalseNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,2]
+TruePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,2]
+FalsePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,1]
+recall = TruePos/(TruePos+FalseNeg)
+precision = TruePos/(TruePos+FalsePos)
+beta=1
+f1score = 2*((precision*recall)/(precision+recall))
+f1score
+```
 
 # Regression de Lasso classique
 

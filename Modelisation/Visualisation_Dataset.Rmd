@@ -54,7 +54,7 @@ corrplot(M_moy, type="upper", order="hclust",
 ```
 
 Pour les femmes:
-On observe une forte corrélation entre la partitipation d'une femme aux activités artistiques et sa participation à des activités telles que des musées ou concerts.
+On observe une forte corrélation entre la participation d'une femme aux activités artistiques et sa participation à des activités telles que des musées ou concerts.
 
 Pour les hommes :
 attr4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la beauté chez leur partenaire.

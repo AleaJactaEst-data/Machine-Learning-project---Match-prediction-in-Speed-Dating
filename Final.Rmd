@@ -1102,7 +1102,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 # Train controle----------------------------------------------
 ctrl <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid")
 ctrl_up <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "up")
-ctrl_rose <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "rose")
+ctrl_down <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "down")
 
 #XGBOOST
 k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
@@ -1121,20 +1121,22 @@ f1_eval2=best_f1(rf_fit_up,test_data)
 #plot(f1_eval2$seuil,f1_eval2$F1)
 test_model(test_data,rf_fit_up,f1_eval2$seuil[which.max(f1_eval2$F1)])
 
-#XGBOOST Echantillonnage Rose
+#XGBOOST Echantillonnage down
 k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
-rf_fit_rose <- caret::train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_rose,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
-plot(rf_fit_rose)
+rf_fit_down <- caret::train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_down,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
+plot(rf_fit_down)
 # Testing
-f1_eval3=best_f1(rf_fit_rose,test_data)
+f1_eval3=best_f1(rf_fit_down,test_data)
 #plot(f1_eval3$seuil,f1_eval3$F1)
-test_model(test_data,rf_fit_rose,f1_eval3$seuil[which.max(f1_eval3$F1)])
+test_model(test_data,rf_fit_down,f1_eval3$seuil[which.max(f1_eval3$F1)])
 
 #Comparaison
-plot(f1_eval2$F1)
-points(f1_eval$F1)
-points(f1_eval3$F1)
+f1_eval$methode="normal"
+f1_eval2$methode="sur-échantillonnage"
+f1_eval3$methode="sous-échantillonnage"
 
+df_toto = bind_rows(as.data.frame(f1_eval),as.data.frame(f1_eval2),as.data.frame(f1_eval3))
+  ggplot(df_toto, aes(x=seuil,y=F1,color=methode))+geom_line()+ggtitle("Comparaison des algorithme xgboost")
 
 ```
 

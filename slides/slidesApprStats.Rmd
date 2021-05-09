@@ -44,10 +44,32 @@ knitr::opts_chunk$set(echo = TRUE)
   <img src="img/resume_projet.jpg" style="vertical-align: middle;" width = "500"/>
 </center>
 
+## Presentation de la base de données    
+* Variable à expliquer *match* : 84% de 0 (pas de match entre le couple) et 16% de 1 (match) ---> données déséquilibrées
+    
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(tidyverse)
+df_speed=read.csv("../DataBase/Speed Dating Data.csv")
+ggplot(df_speed, aes(x = match)) +  
+  geom_bar(aes(y = (..count..)/sum(..count..)))
+``
+
 ## Preprocessing 
 
-* Transformation de la base pour la rendre exploitable (correction des données, nettoyage, creations des facteurs, etc...)
-* Ceation de nouvelles variables
+<h1> Nettoyage du jeu de données </h1>
+
+* Gerer les problemes de codage
+* Harmonser le système de points
+* Gestion des valeurs manquantes 
+* Suppresion de variables inutilisables pour répondre à la problématique
+* Joindre les inforations
+
+<h1> Création de nouvelles variables </h1>
+* Aggréger certaines modalités des variables qualitatives
+* Variable comptage
+* Variables représentant la distances entre les partenaires
+
 
 # Présentation et visualisation des donnees
 
@@ -303,15 +325,16 @@ Les hyperparamètres à optimiser sont :
 <li>la taille des sous-échantillons</li>
 <li>le gain minimum pour diviser un noeud</li>
 </ul>
-Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-score. De plus, nous comparerons les performance de notre modèle avec et sans méthode de ré-échantillonage
 
 ## XGBOOST Evaluation
 <div class='row' style="display: flex">
 <div class="col-sm-6">
-  <img src="img/xgboost_prec_rappel.png" width="100%"/>
+  <img src="img/xgboost_prec_rappel.png" width="100%" title="jjjj"/>
+  <h3>Précision rappel</h3>
 </div>
 <div class="col-sm-6">
   <img src="img/xgboost_f1.png" width="100%"/>
+  <h3>F1-score en fonction du seuil</h3>
   </div>
 </div>
 ## XGBOOST Matrice de confusion
@@ -319,14 +342,18 @@ Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-scor
 <div class='row' style="display: flex">
 <div class="col-sm-4">
   <img src="img/matrix_xgboost.png" width="100%"/>
+  <h3>Xgboost</h3>
 </div>
 <div class="col-sm-3">
   <img src="img/matrix_xgboost_up.png" width="100%"/>
+   <h4>Xgboost<br> sur-échantillonnage</h4>
   </div>
 <div class="col-sm-3">
   <img src="img/matrix_xgboost_down.png" width="100%"/>
+   <h4>Xgboost <br>sous-échantillonnage</h4>
   </div>
 </div>
+
 
 
 # Intelligence artificielle (Modèle 5/5)

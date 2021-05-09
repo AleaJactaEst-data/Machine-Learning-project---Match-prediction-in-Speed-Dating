@@ -133,11 +133,9 @@ Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'a
 Chaque ligne de ce jeu données représente une rencontre entre un individu principal et un individu secondaire. 
 Pendant les événements, les participants ont un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin des quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une variable binaire indiquant si les deux partenaires souhaitent se revoir. On leur a également demandé d'évaluer leur partenaire de dating sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
-## Présentation de la base
 
 L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
 
-## Présentation de la base
 
 De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
 
@@ -410,7 +408,7 @@ importation=function(){
 # Feature engineering
 Une fois que nous avons notre base couple, nous avons fait quelques création de nouvelles variables.
 
-## Variables quantitative
+## Variables quantitatives
 Dans cette partie, nous créeons plusieurs variables afin de mettre en lien les variables des hommes et des femmes comme des variables disatnces qui calcule la disatnce/norme entre les activié des hommes et des femmes.
 ```{r}
 creation_avg_ect=function(df_couple2){

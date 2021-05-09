@@ -33,7 +33,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 ## Preprocessing 
 
 * Transformation de la base pour la rendre exploitable (correction des données, nettoyage, creations des facteurs, etc...)
-* AJOUTER LES CHOSES REALISEES
+* Ceation de nouvelles variables
 
 # Présentation et visualisation des donnees
 
@@ -45,7 +45,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
     + comment les individus s'évaluent eux même (attractivité, intelligence, etc...) 
     + ce que les individus recherchent chez leur potentiel partenaire
     + centres d'intérêts des individus (cinéma, sport, etc...)
-// Eventuellement compléter
+
 
 ## Visualisation & Statistiques descriptives
 
@@ -97,6 +97,11 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Mettre l'accent sur le taux de match détecté :
     + Precision, Sensibilité et F1-Score
     + Ne pas négliger la performance globale
+
+## Critères de performance
+<center>
+  <img src="img/precision-rappel.png" style="vertical-align: middle;"/>
+</center>
 
 # Regression Logistique
 ## Regression Logistique

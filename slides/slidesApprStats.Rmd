@@ -95,9 +95,17 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 # XGBOOST
 ## XGBOOST
 
-# IA
-## IA
+# Intelligence artificielle
+## Intelligence artificielle
 
+* Réseaux de neurones : neurones d'entrées et de sortie
+* Couches de neurones cachées
+* Fonction d'activation
+* Fonction de coût
+
+<center>
+  <img src="img/reseau.jpg" style="vertical-align: middle;" width = "500"/>
+</center>
 
 
 ## Méthode : Fonction de perte "focal loss"
@@ -106,6 +114,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Déséquilibre > trouver une fonction de perte adéquate
 * Fonction de perte : "focal loss"
 * Voici la formule pour cette fonction de perte :
+
 <center>
   <img src="img/Focal_loss.png" style="vertical-align: middle;" width = "300"/>
 </center>

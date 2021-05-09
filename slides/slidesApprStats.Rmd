@@ -422,7 +422,7 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 ## Méthode : poids
 
 * F1_Score seuil 0.5 :  0.358
-* F1_score meilleur seuil : 0.344
+* F1_score meilleur seuil : 0.363
 
 <center>
   <img src="img/Perf_poids.png" style="vertical-align: middle;" width = "300"/>
@@ -441,10 +441,10 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 ## Méthode ROSE
 
 * F1_Score seuil 0.5 : 0.38
-* F1_score meilleur seuil : 0.389
+* F1_score meilleur seuil : 0.395
 
 <center>
-  <img src="img/Perf_rose.png" style="vertical-align: middle;" width = "300"/>
+  <img src="img/tableau_comparaison.jpg" style="vertical-align: middle;" width = "300"/>
 </center>
 
 ## Méthode suréchantillonage
@@ -458,20 +458,26 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 ## Méthode suréchantillonage
 
 * F1_Score seuil 0.5 : 0.38
-* F1_score meilleur seuil : 0.32
+* F1_score meilleur seuil : 0.384
 
 <center>
   <img src="img/Perf_over.png" style="vertical-align: middle;" width = "300"/>
 </center>
 
-## Combinaison des IA
+# Comparaison des algos
+## Comparaison des algos
+<center>
+  <img src="img/Perf_over.png" style="vertical-align: middle;" width = "300"/>
+</center>
 
-* Vote à la majorité
-* Pondération sur les probas
-
-
-# Quelques mots pour comparer les algos
 ## Quelques mots pour comparer les algos
+
+* Essai de combinaisaon des modèles entre IA et XGBoost
+  + Vote à la majorité avec pondération et choix des meilleurs score pour maximiser le F1_score
+
+<center>
+  <img src="img/Combination_modele.png" style="vertical-align: middle;" width = "300"/>
+</center>
 
 # Conclusion
 ## Conclusion

@@ -65,14 +65,18 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     
     model <- keras_model_sequential()
     model %>% 
-      layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+      layer_dense(units = round(ncol), input_shape = c(ncol), activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+      layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+      layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
+      layer_dense(units = round(ncol*0.3), activation ="relu") %>%
+      layer_dropout(0.3)  %>%
+      
       layer_dense(units = 1, activation = "sigmoid")
     
+
     
     model %>% compile(
       loss = focal_loss,
@@ -602,7 +606,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 # Statistique descriptive et visualisation
 
-Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finales, en particulier les corrélations qu'il pourrait y avoir entre les variables.
+Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finale, en particulier les corrélations qu'il pourrait y avoir entre les variables.
 Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitaives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
 
 
@@ -737,9 +741,10 @@ Les valeurs sont très peu significatives donc pas de problème !
 
 # Regression logistique
 
-Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
+Une autre méthode qu'on peut utiliser est la regression logistique. Il s'agit d'un modèle linéaire généralisé. On utilise le *logit* comme fonction de lien.
+Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
 
-# Regression logistique
+
 
 On va donc recréer une base d'entrainement et de test.
 Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).
@@ -855,6 +860,24 @@ On retient le LAMBDA qui minimise l'erreur.
 Enfin, on réalise une prédiction sur l'échantillon de validation pour obtenir le score du modèle.
 
 ```{r}
+#IMPORTATION JEU DE DONNEE
+df_mod=feature_eng()
+#var significatif 
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
+
+# Creation des bases de test et d'apprentissage
+
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+
+
+#nouvelles données d'entrainement
+dapp = train_data[,c("match",var_imp2)]
+#nouvelles données de test
+dtest = test_data[,c("match",var_imp2)]
+
+
+
 #Parametres lambda a tester
 lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
 
@@ -925,7 +948,7 @@ print(caret::confusionMatrix(data=factor(pred_rose),reference=factor(dtest$match
 ```
 
 Avec un sampling Rose, l'Accuracy diminue.
-Cepedant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
+Cependant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
 
 Testons les 2 autres méthodes : Over & Under.
 
@@ -1116,8 +1139,6 @@ points(f1_eval3$F1)
 ```
 
 
-
-
 # Intelligence artificielle
 
 L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
@@ -1199,7 +1220,7 @@ La fonction de perte focal_loss est connue pour s'occuper de données non équil
 
 # loss function et metrics avec choix de gamma
 
-choix_gamma = 5
+choix_gamma = 2
 
 focal_loss=function(y_TRUE, y_pred){
   gamma = choix_gamma
@@ -1223,11 +1244,13 @@ focal_loss=function(y_TRUE, y_pred){
 
 model <- keras_model_sequential()
 model %>% 
-  layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+  layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
+  layer_dropout(0.3)  %>%
+  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
   layer_dropout(0.3)  %>%
   
   layer_dense(units = 1, activation = "sigmoid")
@@ -1246,7 +1269,7 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = epochs,
+  batch_size =0.05,epochs = 700,
   validation_split = 0.2
 )
 
@@ -1265,6 +1288,7 @@ predSimple <- model %>% predict_classes(xtest)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 
 ```
+
 
 Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre faon de modéliser ce problème.
 
@@ -1426,7 +1450,8 @@ var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 # base oversampling
-dapp <- ovun.sample(match ~ ., data = train_data, method = "over",N = 2*(nrow(df_mod) - sum(as.numeric(df_mod$match)-1)))$data
+dapp <- ovun.sample(match ~ ., data = train_data, method = "over",N = 2*(nrow(train_data) - sum(as.numeric(train_data$match)-1)))$data
+
 table(dapp$match)
 dapp = data.frame(lapply(dapp, function(x) as.numeric(as.character(x))))
 ncol = ncol(dapp) - 1 
@@ -1532,10 +1557,9 @@ Maintenant, on utilise les probabilité données par les IA en les pondérant en
 # avec pondération sur les probas : 3 modèles
 score =  (f1_rose*predict_proba(model_rose,xtest_normal)
                         + f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_poids*predict_proba(model_poids,xtest_normal))/(f1_rose+f1_over_1+f1_poids)
+                        + f1_poids*predict_proba(model_poids,xtest))/(f1_rose+f1_over_1+f1_poids)
 predSimple = as.integer(score>0.5)
 ```
 ```{r,echo=TRUE}
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```

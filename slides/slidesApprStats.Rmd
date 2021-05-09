@@ -18,6 +18,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 * L'amour : Comment mettre en relation les personnes qui ont le plus le chance de s'aimer ?
 
+* Données issues de SpeedDating
+
 <center>
   <img src="img/speed_dat_img.jpg" style="vertical-align: middle;" width = "600"/>
 </center>

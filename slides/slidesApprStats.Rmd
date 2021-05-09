@@ -160,7 +160,8 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 ## Méthode : poids
 
-* F1_Score trouvée de 0.45
+* F1_Score seuil 0.5 :  0.358
+* F1_score meilleur seuil : 0.344
 
 <center>
   <img src="img/Perf_poids.png" style="vertical-align: middle;" width = "300"/>
@@ -178,7 +179,8 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 ## Méthode ROSE
 
-* F1_Score trouvée de 0.38
+* F1_Score seuil 0.5 : 0.38
+* F1_score meilleur seuil : 0.389
 
 <center>
   <img src="img/Perf_rose.png" style="vertical-align: middle;" width = "300"/>
@@ -194,11 +196,17 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
   
 ## Méthode suréchantillonage
 
-* F1_Score trouvée de 0.38
+* F1_Score seuil 0.5 : 0.38
+* F1_score meilleur seuil : 0.32
 
 <center>
   <img src="img/Perf_over.png" style="vertical-align: middle;" width = "300"/>
 </center>
+
+## Combinaison des IA
+
+* Vote à la majorité
+* Pondération sur les probas
 
 
 # Quelques mots pour comparer les algos

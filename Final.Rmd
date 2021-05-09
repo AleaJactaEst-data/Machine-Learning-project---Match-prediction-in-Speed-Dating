@@ -1557,10 +1557,9 @@ Maintenant, on utilise les probabilité données par les IA en les pondérant en
 # avec pondération sur les probas : 3 modèles
 score =  (f1_rose*predict_proba(model_rose,xtest_normal)
                         + f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_poids*predict_proba(model_poids,xtest_normal))/(f1_rose+f1_over_1+f1_poids)
+                        + f1_poids*predict_proba(model_poids,xtest))/(f1_rose+f1_over_1+f1_poids)
 predSimple = as.integer(score>0.5)
 ```
 ```{r,echo=TRUE}
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```

@@ -602,7 +602,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 # Statistique descriptive et visualisation
 
-Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finales, en particulier les corrélations qu'il pourrait y avoir entre les variables.
+Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finale, en particulier les corrélations qu'il pourrait y avoir entre les variables.
 Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitaives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
 
 
@@ -737,9 +737,10 @@ Les valeurs sont très peu significatives donc pas de problème !
 
 # Regression logistique
 
-Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
+Une autre méthode qu'on peut utiliser est la regression logistique. Il s'agit d'un modèle linéaire généralisé. On utilise le *logit* comme fonction de lien.
+Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
 
-# Regression logistique
+
 
 On va donc recréer une base d'entrainement et de test.
 Dans sbfControl, le paramètre "function" permet d'indiquer quelle méthode est utilisée pour la selection de variables. Nous avons arbitrairement choisi la méthode lda (Linear Discriminant Analysis).

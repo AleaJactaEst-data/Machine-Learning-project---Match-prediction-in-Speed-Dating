@@ -112,7 +112,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 ## Premier resultat
 
 <center>
-  <img src="img/sbf.png" style="vertical-align: middle;" width = "700"/>
+  <img src="img/reglog1.png" style="vertical-align: middle;" width = "700"/>
 </center>
 
 * Mauvaise performance au vu de nos critères
@@ -123,6 +123,10 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Randomly Over Sampling Examples (ROSE) : equilibrage des données
 * "Nouvelle" base d'apprentissage
 * Ajustement d'un nouveau modèle et meilleurs résultats
+
+## Resultats
+
+![](img/reglog21.png){width=50%}--![](img/reglog22.png){width=40% height="310ps"}
 
 * Regression Logistique normale inadaptée
 

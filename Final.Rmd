@@ -23,8 +23,15 @@ library(doSNOW)
 library(dplyr)
 library(stringr)
 library(rcompanion)
-
+library(dplyr)
+library(corrplot)
+library(RColorBrewer)
+library(ggplot2)
+library(cramer)
+library(rcompanion)
 library(tensorflow)
+library(glmnet)
+library(pROC)
 #install_tensorflow() # si jamais vous n'avez jamais utilisé tensorflow, il faut l'installer avec cette commande
 
 library(keras)
@@ -34,146 +41,6 @@ library(keras)
 # Fonctions nécessaire pour le bon déroulement du projet
 
 ```{r}
-######################################################################
-
-creation_avg_ect=function(df_couple2){
-  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
-            "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
-            paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
-  )
-  
-  #Calcule moy et ect
-  for(v in var_num){
-    df_couple2[,paste0(v,"_moy")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,mean,na.rm=F)
-    df_couple2[,paste0(v,"_ect")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) abs(x[1]-x[2]))
-  }
-  
-  # Calcule de distance
-  #activite
-  activite=c("sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga")
-  df_couple2$act_dist=apply(df_couple2[,paste0(activite,"_ect")]^2,1,function(x) sqrt(sum(x)))
-  #activite1
-  df_couple2$act1_dist=apply(df_couple2[,paste0(c("act_sortie","act_casanier"),"_ect")]^2,1,function(x) sqrt(sum(x)))
-  #activite2
-  df_couple2$act2_dist=apply(df_couple2[,paste0(c("act_autre","act_art","act_sports"),"_ect")]^2,1,function(x) sqrt(sum(x)))
-  
-  #Attribut
-  attribut=c("attr","sinc","intel","fun","amb","shar")
-  #Ce que tu cherches chez l'autre
-  df_couple2$attribut1_dist=apply(df_couple2[,paste0(attribut,"1_avg_ect")]^2,1,function(x) sqrt(sum(x)))
-  #Ce que tu penses que les gens de sexe opposé cherchent chez l'autre
-  df_couple2$attribut2_dist=apply(df_couple2[,paste0(attribut,"2_avg_ect")]^2,1,function(x) sqrt(sum(x)))
-  #Ce que tu penses de toi
-  df_couple2$attribut3_dist=apply(df_couple2[,paste0(attribut[-6],"3_avg_ect")]^2,1,function(x) sqrt(sum(x)))
-  #Ce que tu penses que ton sexe cherche chez l'autre
-  df_couple2$attribut4_dist=apply(df_couple2[,paste0(attribut,"4_avg_ect")]^2,1,function(x) sqrt(sum(x)))
-  #Ce que les autres pensent de toi
-  df_couple2$attribut5_dist=apply(df_couple2[,paste0(attribut[-6],"5_avg_ect")]^2,1,function(x) sqrt(sum(x)))
-  
-  df_couple2$correspondance1_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.x")]-df_couple2[,paste0(attribut[-6],"3_avg.y")])^2,
-                                        1,function(x) sqrt(sum(x)))
-  
-  df_couple2$correspondance2_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.y")]-df_couple2[,paste0(attribut[-6],"3_avg.x")])^2,
-                                        1,function(x) sqrt(sum(x)))
-  
-  
-  var_num=unlist(lapply(var_num,function(x) paste0(x,c(".x",".y","_moy","_ect"))))
-  var_num=c(var_num,"act_dist","act1_dist","act2_dist","attribut1_dist","attribut2_dist","attribut3_dist","attribut4_dist","attribut5_dist","correspondance1_dist","correspondance2_dist")
-  
-  
-  return(list("df"=df_couple2, "var_num" =  var_num))
-}
-
-creation_same_ind=function(df_couple2){
-  
-  var_qual=c("field_cd","race", "goal","date","go_out","career_c")
-  var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
-  
-  
-  #Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
-  for( v in var_qual){
-    v_modalite=unique(c(df_couple2[,paste0(v,".x")],df_couple2[,paste0(v,".y")]))
-    #indicatrice same
-    var_qual2=c(var_qual2,paste0("same_",v))
-    df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
-    #comptage
-    for(mod in v_modalite){
-      var_qual2=c(var_qual2,paste0(v,"_",mod))
-      df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
-    }
-  }
-  for(var in c("match",var_qual2)){
-    df_couple2[,var] = as.factor(df_couple2[,var])
-  }
-  
-  return(list("df"=df_couple2, "var_qual" =  var_qual2))
-}
-
-
-feature_selection=function(df_couple2,var_num,var_qual2,seuil=0.05,nb_var_max=Inf){
-  if(length(seuil)==1){
-    seuil=c(seuil,seuil)
-  }
-  if(length(nb_var_max)==1){
-    nb_var_max=c(nb_var_max,nb_var_max)
-  }
-  #Numerique
-  var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)
-  var_num_sign=var_num_sign[order(var_num_sign)]
-  var_num_sign=var_num_sign[var_num_sign<=seuil[1]]
-  var_num_sign=var_num_sign[1:min(nb_var_max[1],length(var_num_sign))]
-  barplot(var_num_sign,main = "Test student variable numerique")
-  
-  
-  #Qualitative
-  #var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
-  
-  var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)
-  var_qual_sign=var_qual_sign[order(var_qual_sign)]
-  var_qual_sign=var_qual_sign[var_qual_sign<=seuil[2]]
-  var_qual_sign=var_qual_sign[1:min(nb_var_max[2],length(var_qual_sign))]
-  
-  return(c("match",names(c(var_qual_sign,var_num_sign))))
-}
-
-# creation de df_mod, dapp et dtest
-
-# noFactor sert pour le réseau de neurone, un réseaud de neurone ne peut pas prendre de factor
-creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE, noFactor = FALSE,p_split=0.7){
-  if(length(varSignificatifs) > 1){
-    df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
-  }
-  
-  if(length(varSupp) > 1){
-    if(length(which(names(df_mod) %in% varSupp))>0){
-      df_mod =df_mod[,-which(names(df_mod) %in% varSupp)]
-    }
-  }
-  
-  if(noFactor){
-    for(var in varFactor){
-      if(var %in% names(df_mod)){
-        df_mod[,var] = as.numeric(df_mod[,var]) -1
-      }
-    }
-    remove(var)
-    
-    df_mod[,which(names(df_mod) %in% varFactor)] = df_mod[,which(names(df_mod) %in% varFactor)] -1
-    df_mod$match = df_mod$match + 1
-  }
-  
-  
-  set.seed(1234)
-  perm <- createDataPartition(df_mod$match, p = p_split, list = FALSE)
-  dapp <- df_mod[perm,]
-  dtest <- df_mod[-perm,]
-  
-  
-  return(list(df_mod = df_mod,dapp = dapp,dtest = dtest))
-  
-}
-
-
 
 optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoch, xtrain, xtest,ytrain, ytest){
   sol = as.data.frame(c(0,0,0))
@@ -242,12 +109,6 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
 }
 
 
-
-
-
-
-
-
 f1 <- function (data, lev = NULL, model = NULL) {
   precision <- Precision(data$pred, data$obs,positive ="1")
   recall  <- Recall(data$pred, data$obs,positive ="1")
@@ -261,12 +122,12 @@ f1 <- function (data, lev = NULL, model = NULL) {
 
 # Présentation de la base
 
-Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupérer les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
 ## Présentation de la base
 
-Chaque ligne de ce jeu donnée représente une rencontre entre un individus principal et un individus secondaire. 
-Pendant les événements, les participants auraient un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin de leurs quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une varaible binaire indiquant si les deux partenaire veulet se revoire. On leur a également demandé d'évaluer leur date sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
+Chaque ligne de ce jeu données représente une rencontre entre un individu principal et un individu secondaire. 
+Pendant les événements, les participants ont un «premier rendez-vous» de quatre minutes avec tous les autres participants du sexe opposé. À la fin des quatre minutes, on a demandé aux participants s'ils aimeraient revoir leur rendez-vous. Un match est donc une variable binaire indiquant si les deux partenaires souhaitent se revoir. On leur a également demandé d'évaluer leur partenaire de dating sur six attributs: l'attractivité, la sincérité, l'intelligence, le plaisir, l'ambition et les intérêts partagés.
 
 ## Présentation de la base
 
@@ -279,9 +140,11 @@ De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant 
 Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
-Dans un premier temps il est nécéssaire de netoyer notre jeu de données et de le préparer pour répondre à notre probllématique
 
-## Gestion des valeur
+Dans un premier temps il est nécéssaire de nettoyer notre jeu de données et de le préparer pour répondre à notre problématique
+
+## Gestion des valeurs 
+Avec les fonctions ci-dessous, nous gérons les problèmes d'encodages de certaines variables et de formats
 ```{r}
 # Gestion Variables
 
@@ -334,7 +197,8 @@ gestionIncome = function(df){
 }
 ```
 
-## #Homogénisation systeme de points
+## #Homogénéisation systeme de points
+L'étude a été faite sur plusieur vagues et durant la notation des attribut (sincérité, intelligence...), deux systemes de notation ont été utilisés pour un même sujet. C'est pourquoi, afin d'homogéniser le systeme de points ainsi que de répondre à notre objectif, nous avons harmoniser le systeme de points puis effectuer une moyenne sur toutes les vagues pour chaque attribut concernant le meme sujet (perception de soie, attentes de son partenaire..)  
 ```{r}
 agregationVariable = function(df){
   df2=df
@@ -375,6 +239,7 @@ agregationVariable = function(df){
 ```
 
 ## Aggregation
+Certaines variables qualitatives disposait d'un grands nombre de madalité (parfois 17) c'est pourquoi pour certaines d'entres elles, nous avons créé une nouvelles variables qui les reprends en aggrégeant certaines de leurs modalité.
 ```{r}
 aggregateCarrer=function(df_individu){
   #carrer_cd
@@ -455,6 +320,7 @@ gestionDesNASystematiques = function(df_individu){
 ```
 
 ## Creation des couples
+Cette fonctions va nous permettre de créer notre base couple finale en faisant en sorte qu'un couple n'apparaissent qu'une fois et que les informations des deux partenaire soient présents pour chaque ligne. Les variable se terinant par .x désignent celles relatives aux femmes et par .y celles relaives aux hommes
 ```{r}
 creationDf_Couple = function(df,df_individu){
   df_couple_id = df[,c('iid','pid', 'match',"gender")]
@@ -487,6 +353,7 @@ creationDf_Couple = function(df,df_individu){
 ```
 
 ## Fonction du prepocessing
+Enfin nous avons définit un fonction qui fait appelles à celles dont nous venons d'évoquer plus haut.
 ```{r}
 importation=function(){
   pb=txtProgressBar(style = 3,width = 50)
@@ -537,6 +404,90 @@ importation=function(){
 ```
 
 # Feature engineering
+Une fois que nous avons notre base couple, nous avons fait quelques création de nouvelles variables.
+
+## Variables quantitative
+Dans cette partie, nous créeons plusieurs variables afin de mettre en lien les variables des hommes et des femmes comme des variables disatnces qui calcule la disatnce/norme entre les activié des hommes et des femmes.
+```{r}
+creation_avg_ect=function(df_couple2){
+  var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
+            "sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga",
+            paste0("attr",1:5,"_avg"),paste0("sinc",1:5,"_avg"),paste0("intel",1:5,"_avg"),paste0("fun",1:5,"_avg"),paste0("amb",1:5,"_avg"),paste0("shar",c(1,2,4),"_avg")
+  )
+  
+  #Calcule moy et ect
+  for(v in var_num){
+    df_couple2[,paste0(v,"_moy")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,mean,na.rm=F)
+    df_couple2[,paste0(v,"_ect")]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) abs(x[1]-x[2]))
+  }
+  
+  # Calcule de distance
+  #activite
+  activite=c("sports", "tvsports","exercise","dining","museums","art","hiking","gaming","clubbing","reading","tv","theater","movies","concerts","music","shopping","yoga")
+  df_couple2$act_dist=apply(df_couple2[,paste0(activite,"_ect")]^2,1,function(x) sqrt(sum(x)))
+  #activite1
+  df_couple2$act1_dist=apply(df_couple2[,paste0(c("act_sortie","act_casanier"),"_ect")]^2,1,function(x) sqrt(sum(x)))
+  #activite2
+  df_couple2$act2_dist=apply(df_couple2[,paste0(c("act_autre","act_art","act_sports"),"_ect")]^2,1,function(x) sqrt(sum(x)))
+  
+  #Attribut
+  attribut=c("attr","sinc","intel","fun","amb","shar")
+  #Ce que tu cherches chez l'autre
+  df_couple2$attribut1_dist=apply(df_couple2[,paste0(attribut,"1_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses que les gens de sexe opposé cherchent chez l'autre
+  df_couple2$attribut2_dist=apply(df_couple2[,paste0(attribut,"2_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses de toi
+  df_couple2$attribut3_dist=apply(df_couple2[,paste0(attribut[-6],"3_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que tu penses que ton sexe cherche chez l'autre
+  df_couple2$attribut4_dist=apply(df_couple2[,paste0(attribut,"4_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  #Ce que les autres pensent de toi
+  df_couple2$attribut5_dist=apply(df_couple2[,paste0(attribut[-6],"5_avg_ect")]^2,1,function(x) sqrt(sum(x)))
+  
+  df_couple2$correspondance1_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.x")]-df_couple2[,paste0(attribut[-6],"3_avg.y")])^2,
+                                        1,function(x) sqrt(sum(x)))
+  
+  df_couple2$correspondance2_dist=apply((df_couple2[,paste0(attribut[-6],"1_avg.y")]-df_couple2[,paste0(attribut[-6],"3_avg.x")])^2,
+                                        1,function(x) sqrt(sum(x)))
+  
+  
+  var_num=unlist(lapply(var_num,function(x) paste0(x,c(".x",".y","_moy","_ect"))))
+  var_num=c(var_num,"act_dist","act1_dist","act2_dist","attribut1_dist","attribut2_dist","attribut3_dist","attribut4_dist","attribut5_dist","correspondance1_dist","correspondance2_dist")
+  
+  
+  return(list("df"=df_couple2, "var_num" =  var_num))
+}
+
+```
+
+## Variables qualitatives
+Dans cette partie,nous créeon principalement des variables indicatrice et de comptage.
+```{r}
+creation_same_ind=function(df_couple2){
+  
+  var_qual=c("field_cd","race", "goal","date","go_out","career_c")
+  var_qual2=unlist(lapply(var_qual,function(x) paste0(x,c(".x",".y"))))
+  
+  
+  #Variable qualitative Solution1: varaible somme de modalite + indicatrice same modalitee
+  for( v in var_qual){
+    v_modalite=unique(c(df_couple2[,paste0(v,".x")],df_couple2[,paste0(v,".y")]))
+    #indicatrice same
+    var_qual2=c(var_qual2,paste0("same_",v))
+    df_couple2[,paste0("same_",v)]= as.numeric(df_couple2[,paste0(v,".x")]==df_couple2[,paste0(v,".y")])
+    #comptage
+    for(mod in v_modalite){
+      var_qual2=c(var_qual2,paste0(v,"_",mod))
+      df_couple2[,paste0(v,"_",mod)]=apply(df_couple2[,paste0(v,c(".x",".y"))],1,function(x) sum(c(x[1]==mod,x[2]==mod),na.rm = T))
+    }
+  }
+  for(var in c("match",var_qual2)){
+    df_couple2[,var] = as.factor(df_couple2[,var])
+  }
+  
+  return(list("df"=df_couple2, "var_qual" =  var_qual2))
+}
+```
+
 
 ```{r }
 
@@ -562,10 +513,11 @@ feature_eng=function(){
 ```
 
 
-
 # Création de la base de donnée finale
 
 feature_eng() permet de prendre notre base de donnée corrigée, transformée, vidée de ces Na, etc... Elle change des formats, met les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétries du modèle (une paire apparait deux fois), elle crée des variables de distance et de moyenne des variables numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
+
+
 
 # Création de la base de donnée finale
 
@@ -573,10 +525,72 @@ feature_selection() va permettre de donner toutes les varaiables non significati
 
 creationDesData() va permettre de créer notre base finale avec aussi les bases de test et d'apprentissage.
 
+```{r}
+feature_selection=function(df_couple2,var_num,var_qual2,seuil=0.05,nb_var_max=Inf){
+  if(length(seuil)==1){
+    seuil=c(seuil,seuil)
+  }
+  if(length(nb_var_max)==1){
+    nb_var_max=c(nb_var_max,nb_var_max)
+  }
+  #Numerique
+  var_num_sign=sapply(var_num,function(v)  t.test(df_couple2[,v]~df_couple2$match)$p.value)
+  var_num_sign=var_num_sign[order(var_num_sign)]
+  var_num_sign=var_num_sign[var_num_sign<=seuil[1]]
+  var_num_sign=var_num_sign[1:min(nb_var_max[1],length(var_num_sign))]
+  barplot(var_num_sign,main = "Test student variable numerique")
+  
+  
+  #Qualitative
+  #var_qual_sign=sapply(var_qual2,function(v) {cramerV(table(df_couple2[,c("match",v)]))})
+  
+  var_qual_sign=sapply(var_qual2,function(v)  chisq.test(df_couple2[,v],df_couple2$match)$p.value)
+  var_qual_sign=var_qual_sign[order(var_qual_sign)]
+  var_qual_sign=var_qual_sign[var_qual_sign<=seuil[2]]
+  var_qual_sign=var_qual_sign[1:min(nb_var_max[2],length(var_qual_sign))]
+  
+  return(c("match",names(c(var_qual_sign,var_num_sign))))
+}
+# creation de df_mod, dapp et dtest
+# noFactor sert pour le réseau de neurone, un réseaud de neurone ne peut pas prendre de factor
+creationDesData = function(df_couple2, varSignificatifs = FALSE, varSupp = FALSE, noFactor = FALSE,p_split=0.7){
+  if(length(varSignificatifs) > 1){
+    df_mod = df_couple2[,which(names(df_couple2) %in% varSignificatifs)]
+  }
+  
+  if(length(varSupp) > 1){
+    if(length(which(names(df_mod) %in% varSupp))>0){
+      df_mod =df_mod[,-which(names(df_mod) %in% varSupp)]
+    }
+  }
+  
+  if(noFactor){
+    for(var in varFactor){
+      if(var %in% names(df_mod)){
+        df_mod[,var] = as.numeric(df_mod[,var]) -1
+      }
+    }
+    remove(var)
+    
+    df_mod[,which(names(df_mod) %in% varFactor)] = df_mod[,which(names(df_mod) %in% varFactor)] -1
+    df_mod$match = df_mod$match + 1
+  }
+  
+  
+  set.seed(1234)
+  perm <- createDataPartition(df_mod$match, p = p_split, list = FALSE)
+  dapp <- df_mod[perm,]
+  dtest <- df_mod[-perm,]
+  
+  
+  return(list(df_mod = df_mod,dapp = dapp,dtest = dtest))
+  
+}
+```
+
 
 ```{r}
-#IMPORTATION JEU DE DONNEE
-df_mod=feature_eng()
+df_mod = feature_eng()
 #var significatif 
 var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
 
@@ -586,11 +600,144 @@ resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 ```
 
+# Statistique descriptive et visualisation
 
+Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finales, en particulier les corrélations qu'il pourrait y avoir entre les variables.
+Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitaives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
+
+
+```{r}
+#Selection des variables numeriques
+df_num = df_mod %>% select(where(is.numeric))
+#Les variables numeriques concernant les avis des femmes
+df_num_girl = df_num[,names(df_num)[sapply(names(df_num),function(x) str_detect(x,"\\.x"))]]
+  #Les variables numeriques concernant les avis des hommes
+df_num_boy = df_num[,names(df_num)[sapply(names(df_num),function(x) str_detect(x,"\\.y"))]]
+df_num_moy = df_num[,names(df_num)[sapply(names(df_num),function(x) !str_detect(x,"\\.x") & !str_detect(x, "\\.y"))]]
+
+#Calcul des matrices de correlation
+M_girl <- cor(df_num_girl)
+M_boy <- cor(df_num_boy)
+M_moy <- cor(df_num_moy)
+
+#Affichage des matrices de correlation
+corrplot(M_girl, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_boy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+corrplot(M_moy, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"), tl.cex=0.6)
+```
+
+Pour les femmes:
+On observe une forte corrélation entre la partitipation d'une femme aux activités artistiques et sa participation à des activités telles que des musées ou concerts.
+
+Pour les hommes :
+attr4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la beauté chez leur partenaire.
+amb4_avg.y : Note qui indique si l'individu pense que les hommes cherchent l'ambition chez leur partenaire.
+sinc4_avg.y : Note qui indique si l'individu pense que les hommes cherchent la sincérité chez leur partenaire.
+
+On observe une corrélation négative entre attr4_avg.y à amb4_avg.y, sinc4_avg.y.
+Lorsqu'une personne pense que les hommes accordent de l'importance à la beauté, elle considère généralement qu'ils ne s'intéressent pas à l'ambition ou à la sincérité de leur partenaire et inversement.
+
+Pour les moyennes :
+fun5_avg_ect corrélé positivement à attribut5_dist
+attribut5_dist corrélé positivement à amb5_avg_act
+
+## Rapport de corrélation
+
+Le rapport de corrélation est un indicateur statistique qui mesure l'intensité de la liaison entre une variable quantitative et une variable qualitative. Plus il est proche de 1, plus elles sont corrélées et plus il est proche de 0, moins elles le sont.
+
+```{r}
+#Calcule rapport de correlation pour une variables qualitative par rapport a la variable match
+rapp_corr <- function(df,x, groupe) {
+    vartot<- sum((df[,x] - mean(df[,x]))^2)
+    moyennes <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(n=mean(!!rlang::sym(x)))%>%select(n)
+    effectifs <- df%>%group_by(!!rlang::sym(groupe))%>%summarise(l=length(!!rlang::sym(x)))%>%select(l)
+    varinter <- (sum(effectifs * (moyennes - mean(df[,x]))^2))
+    res <- varinter/vartot
+    return(res)
+  }
+```
+
+
+```{r}
+#Calcul des rapports de correlation
+df_num2 = df_num
+df_num2$match <- df_mod$match
+rap_cor_match <- sapply(colnames(df_num), rapp_corr, df=df_num2, groupe="match")
+rap_df <- data.frame("attribut"=names(rap_cor_match), "rap_cor"=rap_cor_match)
+rap_df <- rap_df[order(rap_df$rap_cor),]
+```
+
+
+```{r}
+ggplot(rap_df, aes(x = reorder(attribut, -rap_cor), y = rap_cor)) + 
+  geom_bar(stat = "identity", fill="lightblue") +
+  ggtitle("Rapport de corrélation pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Rapport de corrélation")
+```
+
+Les rapports de corrélation sont très faibles donc les variables sont peu corrélées avec la variable à expliquer : match.
+
+## Test de student
+
+Pour chaque variable, on fait un test de Student : L'hypothèse nulle (H0) dit que les moyennes es observations des variables explicatives ne sont pas significativement différentes selon la classe de la variable explicative.
+
+
+```{r}
+studentTest <- function(x, y){
+  return(t.test(x~df_num2$match)$p.value)
+}
+stud_t_match <- unlist(lapply(df_num, studentTest, y=df_num2$match))
+
+student_t <- data.frame("attribut"=names(stud_t_match), "stud_t"=stud_t_match)
+```
+
+```{r}
+ggplot(student_t, aes(x = reorder(attribut, -stud_t), y = stud_t)) + 
+  geom_bar(stat = "identity", fill="lightgoldenrod") +
+  ggtitle("Test de Student pour chaque variable quantitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables quantitatives explicatives")+
+  ylab("Test de Student")
+```
+ Toutes les p-value sont < 0.05 donc on rejette H0 pour toutes les variables.
+ Les moyennes sont significativement différentes donc on conserve les variables.
+
+## V de Cramer
+
+Le V de Cramer est une mesure d'association entre deux variables de type factor, dans notre cas.
+Pour chaque variable on calcule le V de Cramer par rapport à la variable match à expliquer
+
+```{r}
+df_fac = df_mod %>% select(where(is.factor))
+
+#Calcul de V de Cramer pour chaque variable avec la variable match à expliquer
+cramV <- function(x, y){
+  return(cramerV(table(x,y)))
+}
+cram_v_match <- unlist(lapply(df_fac[,-1], cramV, y=df_fac[,1]))
+
+cram_v <- data.frame("attribut"=names(cram_v_match), "cramer_v"=cram_v_match)
+```
+
+```{r}
+ggplot(cram_v, aes(x = reorder(attribut, -cramer_v), y = cramer_v)) + 
+  geom_bar(stat = "identity", fill="lightgreen") +
+  ggtitle("V de Cramer pour chaque variable qualitative, avec le variable 'match' à expliquer") +
+  theme(plot.title = element_text(size = 10, face = "bold"), axis.text.x = element_blank()) +
+  xlab("Indice des variables qualitatives explicatives")+
+  ylab("V de Cramer")
+```
+
+Les valeurs sont très peu significatives donc pas de problème !
 
 # Regression logistique
 
-Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédié à la selection de variables.
+Une autre méthode qu'on peut utiliser est la regression logistique. Cette méthode souffre du fléau de la dimension et nos données contiennent une centaine de variables. Il est donc plus intéressant d'effectuer une seconde selection de variables sur nos données, pour en retenir quelques dizaines au maximum. Cette fois, on utilise la méthode sbf du package *caret* dédiée à la selection de variables.
 
 # Regression logistique
 
@@ -610,8 +757,9 @@ var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
 ```
 
 On passe de 110 variables explicatives à 44 variables ! 
+On ajuste un modèle de regression logistique sur les nouvelles données obtenues et on observe les performances du modèle.
 
-```{r}
+```{r,echo=FALSE}
 
 #nouvelles données d'entrainement
 dapp = train_data[,c("match",var_imp2)]
@@ -640,7 +788,7 @@ dapp2 <- ROSE(match ~ ., data=dapp, seed=123,N=round(5*nrow(dapp)),p=0.4)$data
 
 On ajuste ensuite un modèle de regression logistique (comme précedemment) sur ces nouvelles données. On effectue une opération de scaling sur les données avant.
 
-```{r}
+```{r,echo=FALSE}
 finalRL = caret::train(
   form = match ~ .,
   data = dapp2,
@@ -650,20 +798,330 @@ finalRL = caret::train(
   preProcess = c("scale"))
 ```
 
-```{r,echo=TRUE}
+```{r,echo =FALSE}
 confusionMatrix(predict(finalRL,dapp),dapp$match,positive = '1',mode = 'prec_recall')
 ```
 
 Sur les données d'apprentissage, on améliore le F1 Score et la détection de matchs positifs. Cependant cela reste insuffisant. On obtient logiquement des performances similaires sur l'échantillon de validation :
 
-```{r,echo=TRUE}
+```{r,echo=FALSE}
 confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_recall')
 ```
 
-La regression logistique n'est clairement pas adaptée à la prédiction pour nous données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+La regression logistique n'est clairement pas adaptée à la prédiction pour nos données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
+
+# svm
+```{r}
+df_mod=feature_eng()
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
+#Split
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 
 
+# base rose
 
+df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
+resu=creationDesData(df_mod,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp
+
+```
+
+```{r} 
+library(e1071)
+dapp = train_data
+dtest = test_data
+
+#ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
+
+#tune_grid <- expand.grid(C=c(0.001,0.01,0.1,1), sigma = 1)
+
+#mod.svm <- caret::train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "YeoJohnson"), metric = "F1")
+
+
+#mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=1)
+#mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
+tune.out <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,1,10),gamma=0.1))
+summary(tune.out)
+mod.svm<-tune.out$best.model
+# resultat sur le modèle svm tester
+pred.svm = predict(mod.svm, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
+```
+
+```{r}
+TrueNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,1]
+FalseNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,2]
+TruePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,2]
+FalsePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,1]
+recall = TruePos/(TruePos+FalseNeg)
+precision = TruePos/(TruePos+FalsePos)
+beta=1
+f1score = 2*((precision*recall)/(precision+recall))
+f1score
+```
+
+# Regression de Lasso classique
+
+La Régression de Lasso est une régression pénalisée.
+En effet dans l'estimation des paramètres du modèle, on utilise également la méthode des moindres carrés avec une pénalité sur la norme de ces paramètres via un hyper-paramètre LAMBDA, positif.
+
+On entraine donc un modèle sur l'échantillon d'entrainement pour optimiser LAMBDA par Cross Validation.
+On retient le LAMBDA qui minimise l'erreur.
+Enfin, on réalise une prédiction sur l'échantillon de validation pour obtenir le score du modèle.
+
+```{r}
+#Parametres lambda a tester
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+L'Accuracy est bonne : 0.83.
+Cependant, le rappel (Recall) est très mauvais : cela signifie que le modèle prédit bien les 0 mais mal les 1.
+En effet, le jeu de données est déséquilibré car il y a beaucoup plus de 0 que de 1.
+Pour pallier à ce problème on fait un travail sur le sampling avec 3 méthodes : Rose, OverSampling & UnderSampling afin d'équilibrer le jeu de données et améliorer les prédictions.
+
+
+## Sampling sur le jeu de donnees avec ROSE
+
+```{r}
+#Sampling avec ROSE pour avoir un jeu de données plus équilibré
+data.rose <- ROSE(match ~ ., data = dapp, seed = 1)$data
+table(data.rose$match)
+```
+
+```{r}
+#Modele et test
+dapp1 = data.rose
+
+X <- model.matrix(match~., data=dapp1)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp1$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_rose <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_rose),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Avec un sampling Rose, l'Accuracy diminue.
+Cepedant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
+
+Testons les 2 autres méthodes : Over & Under.
+
+## Over & Under sampling
+
+```{r}
+#over sampling dataset
+dapp2 <- ovun.sample(match ~ ., data = dapp, method = "over",N = 4696)$data
+table(dapp2$match)
+#under sampling dataset
+dapp3 <- ovun.sample(match ~ ., data = dapp, method = "under", N = 934, seed = 1)$data
+table(dapp3$match)
+```
+
+### Avec OVER sampling
+
+```{r}
+X <- model.matrix(match~., data=dapp2)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp2$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_over <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_over),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Le modèle également mieux les 1, le rappel est donc meilleur que sans travail sur l'équilibrage de jeu de données.
+Toutefois, l'accuracy reste faible. 
+Pour comparer, on utilise enfin un UNDER sampling.
+
+### Avec UNDER sampling
+
+```{r}
+lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
+
+X <- model.matrix(match~., data=dapp3)
+X_test = model.matrix(match~., data=dtest)
+y <- dapp3$match
+
+#Entrainement du modele
+lasso_cv <- cv.glmnet(X, as.factor(y), alpha = 1, lambda = lambdas_to_try,
+                      standardize = TRUE, nfolds = 10, family="binomial")
+
+#Affichage error / lambda
+plot(lasso_cv)
+
+#Recuperation du meilleur lambda
+lambda_best = lasso_cv$lambda.min
+
+#Model avec meilleur lambda
+lasso_mod <- glmnet(X, as.factor(y), alpha = 1, lambda = lambda_best, standardize = TRUE, family="binomial")
+
+#Prediction
+pred_under <- as.numeric(predict(lasso_mod, X_test, type="class"))
+
+#Affichage des resultats avec caret
+print(caret::confusionMatrix(data=factor(pred_under),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
+```
+
+Le modèle prédit mieux les 1 que sans travail sur le sampling mais l'accuracy reste faible.
+Désormais, étudions d'autres modèles susceptibles d'obtenir de meilleurs scores.
+
+### Pour chaque methode de sampling : rose, over & under, on affiche la courbe ROC.
+
+```{r}
+roc1=roc(dtest$match, pred_rose)
+roc2=roc(dtest$match, pred_over)
+roc3=roc(dtest$match, pred_under)
+
+plot(roc1, col = 1, lty = 2, main = "ROC")
+plot(roc2, col = 2, lty = 2, add = TRUE)
+plot(roc3, col = 3, lty = 2, add = TRUE)
+
+legend("bottom",
+       legend=c("Rose", "Over", "Under"),
+       col=c(1,2,3),
+       lwd=4, cex =1, xpd = TRUE, horiz = FALSE)
+```
+
+Meme avec un sampling les résultats obtenus ne sont pas satisfaisants : les modèles prédisent trop de 0 et le "rappel" n'est pas bon. On s'oriente donc vers d'autres modèles.
+
+# XGBOOST
+Dans cette partie on va s'intérésser à une méthode de modélisatioin utilisant l'aggrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :
+
+** le nombre d'itération du boosting
+** la profondeur maximale des arbres 
+** le pas de descente de gradient
+** le pourcentage de variable qu'on garde pour la construton de chaque arbre
+** la taille des sous-échantillons
+** le gain minimum pour diviser un noeud
+
+Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-score. De plus, nous comparerons les performance de notre modèle avec et sans méthode de ré-échantillonage
+
+```{r}
+f1 <- function (data, lev = NULL, model = NULL) {
+  setTxtProgressBar(pb, k/nb_tune);k<<-k+1;
+  precision <- Precision(data$pred, data$obs,positive ="1")
+  recall  <- Recall(data$pred, data$obs,positive ="1")
+  f1_val <- F1_Score(data$pred, data$obs,positive ="1")
+  resu=c("precision"=precision,"rappel"=recall,"F1"=f1_val)
+  resu
+}
+
+test_model<-function(test_data,model,seuil=0.5){
+  # Testing
+  final <- data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))
+  final$predict <- ifelse(final$X0 > seuil, "0", "1")
+  caret::confusionMatrix(as.factor(final$predict), test_data$match,positive="1",mode="prec_recall")
+}
+
+best_f1<-function(model,test_data,min=0.01,max=0.99,step=0.001){
+  seuil=seq(min,max,step)
+  f1_seuil=sapply(seuil,function(x){
+    print(x)
+    # Testing
+    final <- data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))
+    final$predict <- factor(ifelse(final$X0 > x, "0", "1"),levels = c("0","1"))
+    F1_Score(final$predict, final$actual,positive ="1")
+  })
+  return(list(seuil=seuil,F1=f1_seuil))
+}
+```
+
+```{r}
+tune_grid <- expand.grid(nrounds=c(500,1000,2000),max_depth = c(1:3), eta = c(0.1,0.01), gamma = c(0.1,0),colsample_bytree = c(0.75),subsample = c(0.50),min_child_weight = c(0))
+nb_tune<<-nrow(tune_grid)*10
+
+# Train controle----------------------------------------------
+ctrl <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid")
+ctrl_up <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "up")
+ctrl_rose <- trainControl(method = "cv",number = 10,summaryFunction = f1,search = "grid",sampling = "rose")
+
+#XGBOOST
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
+rf_fit <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
+plot(rf_fit)
+# Testing
+f1_eval=best_f1(rf_fit,test_data)
+test_model(test_data,rf_fit,f1_eval$seuil[which.max(f1_eval$F1)])
+
+#XGBOOST Sur -echantillonnage
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
+rf_fit_up <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_up,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
+plot(rf_fit_up)
+# Testing
+f1_eval2=best_f1(rf_fit_up,test_data)
+plot(plot(f1_eval2$seuil,f1_eval2$F1))
+test_model(test_data,rf_fit_up,f1_eval2$seuil[which.max(f1_eval2$F1)])
+
+#XGBOOST Echantillonnage Rose
+k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
+rf_fit_rose <- train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_rose,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
+plot(rf_fit_rose)
+# Testing
+f1_eval3=best_f1(rf_fit_rose,test_data)
+plot(f1_eval3$seuil,f1_eval3$F1)
+test_model(test_data,rf_fit_rose,f1_eval3$seuil[which.max(f1_eval3$F1)])
+
+#Comparaison
+plot(f1_eval2$F1)
+points(f1_eval$F1)
+points(f1_eval3$F1)
+
+
+```
 
 
 # Intelligence artificielle
@@ -1212,6 +1670,7 @@ score = (f1_over_1*predict_proba(model_over_1,xtest_normal)
 predSimple = as.integer(score>0.5)
 
 ```
+
 ```{r,echo=TRUE}
 
 

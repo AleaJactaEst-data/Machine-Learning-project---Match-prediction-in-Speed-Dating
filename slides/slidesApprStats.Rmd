@@ -265,18 +265,41 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 **Meilleur modèle** : SVM polynomial de degré 3 avec le cout égal à 0.1
 
 
-# XGBOOST
-Dans cette partie on va s'intérésser à une méthode de modélisatioin utilisant l'aggrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :
-
-** le nombre d'itération du boosting
-** la profondeur maximale des arbres 
-** le pas de descente de gradient
-** le pourcentage de variable qu'on garde pour la construton de chaque arbre
-** la taille des sous-échantillons
-** le gain minimum pour diviser un noeud
-
-Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-score. De plus, nous comparerons les performance de notre modèle avec et sans méthode de ré-échantillonage
 ## XGBOOST
+Les hyperparamètres à optimiser sont :
+<ul>
+<li> le nombre d'itération du boosting</li>
+<li>la profondeur maximale des arbres </li>
+<li>le pas de descente de gradient</li>
+<li>le pourcentage de variable qu'on garde pour la construton de chaque arbre</li>
+<li>la taille des sous-échantillons</li>
+<li>le gain minimum pour diviser un noeud</li>
+</ul>
+Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-score. De plus, nous comparerons les performance de notre modèle avec et sans méthode de ré-échantillonage
+
+## XGBOOST Evaluation
+<div class='row' style="display: flex">
+<div class="col-sm-6">
+  <img src="img/xgboost_prec_rappel.png" width="100%"/>
+</div>
+<div class="col-sm-6">
+  <img src="img/xgboost_f1.png" width="100%"/>
+  </div>
+</div>
+## XGBOOST Matrice de confusion
+
+<div class='row' style="display: flex">
+<div class="col-sm-4">
+  <img src="img/matrix_xgboost.png" width="100%"/>
+</div>
+<div class="col-sm-3">
+  <img src="img/matrix_xgboost_up.png" width="100%"/>
+  </div>
+<div class="col-sm-3">
+  <img src="img/matrix_xgboost_down.png" width="100%"/>
+  </div>
+</div>
+
 
 # Intelligence artificielle
 ## Intelligence artificielle

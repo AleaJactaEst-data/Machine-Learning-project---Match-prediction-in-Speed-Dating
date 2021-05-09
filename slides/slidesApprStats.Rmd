@@ -124,7 +124,15 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
     + comment les individus s'évaluent eux même (attractivité, intelligence, etc...) 
     + ce que les individus recherchent chez leur potentiel partenaire
     + centres d'intérêts des individus (cinéma, sport, etc...)
+    
+    
+### Méthode : Fonction de perte "focal loss"
 
+* F1 score : 0.25
+
+<center>
+  <img src="img/Perf_focal.png" style="vertical-align: middle;" width = "700"/>
+</center>*
 
 ### Méthode : poids
 
@@ -139,6 +147,10 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 * F1_Score trouvée de 0.45
 
+<center>
+  <img src="img/Perf_poids.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
 ### Méthode ROSE
 
 * Autres méthodes ? Rééchantillonage ROSE
@@ -148,6 +160,10 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 * F1_Score trouvée de 0.38
 
+<center>
+  <img src="img/Perf_rose.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
 ### Méthode suréchantillonage
 
 * Rééchantillonage : oversampling
@@ -155,6 +171,10 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 ### Méthode suréchantillonage
 
 * F1_Score trouvée de 0.38
+
+<center>
+  <img src="img/Perf_over.png" style="vertical-align: middle;" width = "700"/>
+</center>
 
 ## Quelques mots pour comparer les algos
 

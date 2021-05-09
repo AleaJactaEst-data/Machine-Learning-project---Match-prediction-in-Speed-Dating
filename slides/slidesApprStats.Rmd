@@ -18,17 +18,25 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
-Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette étude afin que notre application mette en relation des personnes qui ont le plus de chance d'avoir un match.
+## Table des matières
 
+* Présentation du jeu de données
+* Preprocessing & Nettoyage
+* Visualisation et Statistiques Descriptives
+* Les modèles
+* Le modèle retenu et conclusion
 
-## Presentation de la base de données
+## Présentation de la base de données
 
 * Base de données recupérée sur [kaggle](https://www.kaggle.com/annavictoria/speed-dating-experiment) 
 * Données brutes : 
     + 8379 lignes et 195 variables
     + variable à expliquer : match
     + Variables explicatives : 73 variables de type identification
-* Nécessité de nettoyer en profondeur les données
+
+<center>
+  <img src="img/resume_projet.jpg" style="vertical-align: middle;" width = "500"/>
+</center>
 
 ## Preprocessing 
 
@@ -37,7 +45,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 # Présentation et visualisation des donnees
 
-## Presentation
+## Présentation
 
 * Une ligne correspond aux données de 2 individus
 * Variable à expliquer *match* : 84% de 0 (pas de match entre le couple) et 16% de 1 (match) ---> données déséquilibrées
@@ -103,8 +111,8 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
   <img src="img/precision-rappel.png" style="vertical-align: middle;"/>
 </center>
 
-# Regression Logistique
-## Regression Logistique
+# Régression Logistique (Modèle 1/5)
+## Régression Logistique
 
 * Modèle "naturel" pour une classification binaire
 * 100+ variables --> fléau de la dimension
@@ -114,7 +122,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 </center>
 * Passage de 100+ variables à 44 variables
 
-## Premier resultat
+## Premier résultat
 
 <center>
   <img src="img/reglog1.png" style="vertical-align: middle;" width = "700"/>
@@ -123,13 +131,13 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 * Mauvaise performance au vu de nos critères
 * Hypothèse : cela est du au déséquilibre des données
 
-## Surenchantillonage (Oversampling)
+## Suréchantillonage (Oversampling)
 
 * Randomly Over Sampling Examples (ROSE) : equilibrage des données
 * "Nouvelle" base d'apprentissage
 * Ajustement d'un nouveau modèle et meilleurs résultats
 
-## Resultats
+## Résultats
 
 ![](img/reglog21.png){width=50%}--![](img/reglog22.png){width=40% height="310ps"}
 
@@ -137,7 +145,7 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 
 
-# Régression de Lasso : 4 modèles
+# Régression de Lasso : 4 modèles (Modèle 2/5)
 ## Régression de Lasso : Sans sampling
 
 * Optimisation de l'hyper-paramètre Lambda
@@ -194,7 +202,14 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
   <img src="img/reg_under_res.png" style="vertical-align: left;" width = "400"/>
 </center>
 
-# SVM
+## Régression avec Lasso : Résumé des scores
+
+* Tableau des scores pour différents sampling
+<center>
+  <img src="img/lasso_resume_scores.png" style="vertical-align: left;" width = "700"/>
+</center>
+
+# SVM (Modèle 3/5)
 ## SVM
 
 * 100+ variables --> cas des données non-séparables
@@ -270,6 +285,8 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 **Meilleur modèle** : SVM polynomial de degré 3 avec le cout égal à 0.1
 
 
+# XGBOOST (Modèle 4/5)
+
 ## XGBOOST
 Les hyperparamètres à optimiser sont :
 <ul>
@@ -306,7 +323,7 @@ Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-scor
 </div>
 
 
-# Intelligence artificielle
+# Intelligence artificielle (Modèle 5/5)
 ## Intelligence artificielle
 
 * Réseaux de neurones : neurones d'entrées et de sortie

@@ -16,10 +16,10 @@ knitr::opts_chunk$set(echo = TRUE)
 # Description du problème et des données
 ## Description du problème
 
-Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+* L'amour : Comment mettre en relation les personnes qui ont le plus le chance de s'aimer ?
 
 <center>
-  <img src="img/speed_dat_img.jpg" style="vertical-align: middle;" width = "500"/>
+  <img src="img/speed_dat_img.jpg" style="vertical-align: middle;" width = "600"/>
 </center>
 
 ## Table des matières

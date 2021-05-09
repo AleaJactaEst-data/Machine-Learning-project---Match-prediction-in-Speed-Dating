@@ -126,6 +126,8 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 * Regression Logistique normale inadaptée
 
+
+
 # Régression de Lasso : 4 modèles
 ## Régression de Lasso : Sans sampling
 
@@ -185,6 +187,79 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 # SVM
 ## SVM
+
+* 100+ variables --> cas des données non-séparables
+
+## Premier modèle
+
+* Modèle SVM linéaire sur la base initiale
+
+<center>
+  <img src="img/svm-lin-simple.png" style="vertical-align: middle;" width = "300"/>
+</center>
+
+* Mauvais modèle qui classifie tous comme des couples non match parce que cela donne un taux 83.4% des couples correctement prédites    
+
+---> Due au déséquilibre dans la base de données 
+
+* Solution : Surechantillonage de ROSE
+
+## Les modèles obtenus avec la nouvelle base de données d'apprentissage avec ROSE
+
+* Modèles testés : SVM linéaire, SVM radial, SVM polynomial.
+
+* Pour chaque modèle, on retire la précision, la sensibilité et le F1 score pour les comparer à la fin.
+
+## SVM linéaire
+* Séparation des données par un seuil linéaire
+* <span class="red2">**Pénalisation**</span> de la mauvaise classification
+* <span class="red2">**Cout**</span> de pénalisation à calibrer
+
+<left>
+  <img src="img/SVM-lin-rose.png" style="vertical-align: middle;" width="280"/>
+</left>
+<right>
+  <img src="img/svm_lin_rose.png" style="vertical-align: middle;" width="280"/>
+</right>
+
+**Meilleur modèle** : <span class="red2"> Cout = 0.1 </span>
+
+## SVM radial
+* Séparation des données par un seuil radial
+* <span class="red2">**Cout**</span> de pénalisation à calibrer
+
+<left>
+  <img src="img/SVM-rad-rose.png" style="vertical-align: middle;" width="280"/>
+</left>
+<right>
+  <img src="img/SVM-rad-rose-optim-param.png" style="vertical-align: middle;" width="280"/>
+</right>
+
+**Meilleur modèle** : <span class="red2"> Cout = 0.1, Gamma = 0.01  </span>
+
+## SVM polynomial
+* Séparation des données par un seuil polynomial
+* <span class="red2">**Cout**</span> de pénalisation à calibrer
+* <span class="red2">**Degrès**</span> du polynome à calibrer
+
+<left>
+  <img src="img/SVM-pol-rose.png" style="vertical-align: middle;" width="280"/>
+</left>
+<right>
+  <img src="img/SVM-pol-rose-optim-param.png" style="vertical-align: middle;" width="280"/>
+</right>
+
+
+**Meilleur modèle** : <span class="red2"> Cout = 0.1, Degree = 3 </span>
+
+## Comparaison des 3 modèles
+
+<center>
+  <img src="img/comparaison.png" style="vertical-align: middle;" width="780"/>
+</center>
+
+**Meilleur modèle** : SVM polynomial de degré 3 avec le cout égal à 0.1
+
 
 # XGBOOST
 Dans cette partie on va s'intérésser à une méthode de modélisatioin utilisant l'aggrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :

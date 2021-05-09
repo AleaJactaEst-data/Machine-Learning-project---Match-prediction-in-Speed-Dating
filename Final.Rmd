@@ -815,40 +815,97 @@ confusionMatrix(predict(finalRL,dtest),dtest$match,positive = '1',mode = 'prec_r
 
 La regression logistique n'est clairement pas adaptée à la prédiction pour nos données. Même après une autre selection de variables avec l'AUC, les résultats sont toujours mauvais.
 
-# svm
+# SVM
+
+L'approche SVM (Support Vector Machines) cherche le meilleur hyperplan en terme de séparation des données. Dans notre cas, avec plus que 100 variables explicatives, il est très probable que les données seraient séparables et nous allons des modèles SVM non-séparable. 
+
+Dans un premier temps nous testons un modèle SVM linéaire.
 ```{r}
-df_mod=feature_eng()
-var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
-#Split
-resu=creationDesData(df_mod$df,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;dtest = resu$dtest
-
-# base rose
-
-dapp <- ROSE(match ~ ., data = train_data, seed = 1)$data
-```
-
-```{r} 
 library(e1071)
-tune.out <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,1,10),gamma=0.1))
-summary(tune.out)
-mod.svm<-tune.out$best.model
+dtest = test_data
+dapp = train_data
+
+tune.out.lin.sim <- tune(svm,match~.,data=dapp,kernel="linear",ranges=list(cost=c(0.1,0.01,0.001)))
+summary(tune.out.lin.sim)
+mod.svm.lin<-tune.out.lin.sim$best.model
 # resultat sur le modèle svm tester
-pred.svm = predict(mod.svm, newdata = dtest)
-print(caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1"))
+pred.svm.lin = predict(mod.svm.lin, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm.lin,reference=dtest$match,positive="1"))
 ```
+Nous obtenons des résultats pas très corrects, ce modèle a classifié toutes les rencontres comme non-match car la précision est de 0.834. Ce modèle ayant un rappel de 0 et on a trop de Faux Négatifs. 
+
+Pour corriger cet erreur, nous allons réeschantilloner la base avec la méthode Rose permetttant de rééquilibrer les classes. Cette méthode crée une base de donnée équilibré par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
+```{r}
+dtest = test_data
+# base rose
+dapp <- ROSE(match ~ ., data = train_data, seed = 1)$data
+
+tune.out.lin.rose <- tune(svm,match~.,data=dapp,kernel="linear",ranges=list(cost=c(0.1,0.01,0.001)))
+summary(tune.out.lin.rose)
+mod.svm.lin.rose<-tune.out.lin.rose$best.model
+# resultat sur le modèle svm tester
+pred.svm.lin.rose = predict(mod.svm.lin.rose, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positive="1"))
+
+ggplot(data.frame(tune.out.lin.rose$performances[,-3]))+geom_point(aes(log(cost),error))+geom_line(aes(log(cost),error))+labs(title = "Erreur en fonction de log(cout)")
+
+```
+Nous obtenons un mieux modèle. Le meilleur valeur pour C est 0.1 et pour ce modèle, 66.3% des rencontres sont correctement prédites et 57% des rencontres match et 68,19% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 
+```{r}
+recall = as.double(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positive="1")$byClass["Sensitivity"])
+precision = as.double(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positive="1")$byClass["Pos Pred Value"])
+f1score.lin.rose = 2*((precision*recall)/(precision+recall))
+f1score.lin.rose
+```
+Le F1 score du modèle SVM linéaire est de 0.360.
+
+Ensuite on essaie le modèle SVM radial. On cherche à optimiser les paramatres de cout et de gamma.
+```{r}
+tune.out.rad <- tune(svm,match~.,data=dapp,kernel="radial",ranges=list(cost=c(.0001,.001,.01,.1),gamma=c(.01,.1,.5,1,2)))
+summary(tune.out.rad)
+mod.svm.rad<-tune.out.rad$best.model
+# resultat sur le modèle svm tester
+pred.svm.rad = predict(mod.svm.rad, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm.rad,reference=dtest$match,positive="1"))
+
+ggplot(data.frame(tune.out.rad$performances[,-3]))+geom_point(aes(log(cost),error))+geom_line(aes(log(cost),error))+labs(title = "Erreur en fonction de log(cout)")
+
+```
+Le meilleur valeur pour C est 0.1 et pour gamma est 0.01. Pour ce modèle de SVM radial, 70.6% des rencontres sont correctement prédites et 53% des rencontres match et 74% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 
+```{r}
+recall = as.double(caret::confusionMatrix(data=pred.svm.rad,reference=dtest$match,positive="1")$byClass["Sensitivity"])
+precision = as.double(caret::confusionMatrix(data=pred.svm.rad,reference=dtest$match,positive="1")$byClass["Pos Pred Value"])
+f1score.rad = 2*((precision*recall)/(precision+recall))
+f1score.rad
+```
+Le F1 score du modèle SVM radial est de 0.374.
 
 ```{r}
-TrueNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,1]
-FalseNeg = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[1,2]
-TruePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,2]
-FalsePos = caret::confusionMatrix(data=pred.svm,reference=dtest$match,positive="1")$table[2,1]
-recall = TruePos/(TruePos+FalseNeg)
-precision = TruePos/(TruePos+FalsePos)
-beta=1
-f1score = 2*((precision*recall)/(precision+recall))
-f1score
+dtest = test_data
+# base rose
+dapp <- ROSE(match ~ ., data = train_data, seed = 1)$data
+
+tune.out.pol <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,0.01,0.001),gamma=0.1,degree=c(2,3)))
+summary(tune.out.pol)
+mod.svm.pol<-tune.out.pol$best.model
+# resultat sur le modèle svm tester
+pred.svm.pol = predict(mod.svm.pol, newdata = dtest)
+print(caret::confusionMatrix(data=pred.svm.pol,reference=dtest$match,positive="1"))
+
+ggplot(data.frame(tune.out.pol$performances[,-3]))+geom_point(aes(log(cost),error))+geom_line(aes(log(cost),error))+labs(title = "Erreur en fonction de log(cout)")
+
 ```
+Le meilleur valeur pour C est 0.1 et pour le degré est 3. Pour ce modèle de SVM polynomial, 73.7% des rencontres sont correctement prédites et 48% des rencontres match et 78.8% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 
+
+```{r}
+recall = as.double(caret::confusionMatrix(data=pred.svm.pol,reference=dtest$match,positive="1")$byClass["Sensitivity"])
+precision = as.double(caret::confusionMatrix(data=pred.svm.pol,reference=dtest$match,positive="1")$byClass["Pos Pred Value"])
+f1score.pol = 2*((precision*recall)/(precision+recall))
+f1score.pol
+```
+Le F1 score du modèle SVM polynomial est de 0.377.
+
+Le meilleur modèle de SVM est le modèle polynomial de degré 3 et de cout égal à 0.1. Pour ce modèle le taux de bien classé est 73.7% avec un F1 score de 0.377.
 
 # Regression de Lasso classique
 

@@ -65,14 +65,18 @@ optimisationNeuroneDeeplearning = function(gamma_min, gamma_max, gamma_pas, epoc
     
     model <- keras_model_sequential()
     model %>% 
-      layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+      layer_dense(units = round(ncol), input_shape = c(ncol), activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+      layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
-      layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+      layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
       layer_dropout(0.3)  %>%
+      layer_dense(units = round(ncol*0.3), activation ="relu") %>%
+      layer_dropout(0.3)  %>%
+      
       layer_dense(units = 1, activation = "sigmoid")
     
+
     
     model %>% compile(
       loss = focal_loss,
@@ -871,6 +875,24 @@ On retient le LAMBDA qui minimise l'erreur.
 Enfin, on réalise une prédiction sur l'échantillon de validation pour obtenir le score du modèle.
 
 ```{r}
+#IMPORTATION JEU DE DONNEE
+df_mod=feature_eng()
+#var significatif 
+var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual) # on peut choisir le seuil pour prendre les meilleurs # variables significatifs
+
+# Creation des bases de test et d'apprentissage
+
+resu=creationDesData(df_mod$df,var_signif)
+df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
+
+
+#nouvelles données d'entrainement
+dapp = train_data[,c("match",var_imp2)]
+#nouvelles données de test
+dtest = test_data[,c("match",var_imp2)]
+
+
+
 #Parametres lambda a tester
 lambdas_to_try <- 10^seq(-3, 5, length.out = 100)
 
@@ -941,7 +963,7 @@ print(caret::confusionMatrix(data=factor(pred_rose),reference=factor(dtest$match
 ```
 
 Avec un sampling Rose, l'Accuracy diminue.
-Cepedant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
+Cependant on passe d'un F1 score de 0.01 à 0.37 : cela est lié au fait que le taux de Vrai Positif est beaucoup plus important. Avec un jeu de données plus équilibré, le modèle est "mieux entrainé" et prédit mieux les 1.
 
 Testons les 2 autres méthodes : Over & Under.
 
@@ -1207,7 +1229,7 @@ La fonction de perte focal_loss est connue pour s'occuper de données non équil
 
 # loss function et metrics avec choix de gamma
 
-choix_gamma = 5
+choix_gamma = 2
 
 focal_loss=function(y_TRUE, y_pred){
   gamma = choix_gamma
@@ -1231,11 +1253,13 @@ focal_loss=function(y_TRUE, y_pred){
 
 model <- keras_model_sequential()
 model %>% 
-  layer_dense(units = round(ncol*0.8), input_shape = c(ncol), activation = "sigmoid") %>%
+  layer_dense(units = round(ncol), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+  layer_dense(units = round(ncol*0.7),  activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.15), activation ="relu") %>%
+  layer_dense(units = round(ncol*0.5),  activation = "sigmoid") %>%
+  layer_dropout(0.3)  %>%
+  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
   layer_dropout(0.3)  %>%
   
   layer_dense(units = 1, activation = "sigmoid")
@@ -1254,7 +1278,7 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = epochs,
+  batch_size =0.05,epochs = 700,
   validation_split = 0.2
 )
 
@@ -1273,6 +1297,7 @@ predSimple <- model %>% predict_classes(xtest)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 
 ```
+
 
 Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre faon de modéliser ce problème.
 
@@ -1434,7 +1459,8 @@ var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 # base oversampling
-dapp <- ovun.sample(match ~ ., data = train_data, method = "over",N = 2*(nrow(df_mod) - sum(as.numeric(df_mod$match)-1)))$data
+dapp <- ovun.sample(match ~ ., data = train_data, method = "over",N = 2*(nrow(train_data) - sum(as.numeric(train_data$match)-1)))$data
+
 table(dapp$match)
 dapp = data.frame(lapply(dapp, function(x) as.numeric(as.character(x))))
 ncol = ncol(dapp) - 1 

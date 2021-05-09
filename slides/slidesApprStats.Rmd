@@ -131,6 +131,8 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 ### Méthode : poids
 
+* F1_Score trouvée de 0.45
+
 ### Méthode ROSE
 
 * Autres méthodes ? Rééchantillonage ROSE
@@ -138,12 +140,15 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 ### Méthode ROSE
 
+* F1_Score trouvée de 0.38
+
 ### Méthode suréchantillonage
 
 * Rééchantillonage : oversampling
 
 ### Méthode suréchantillonage
 
+* F1_Score trouvée de 0.38
 
 ## Quelques mots pour comparer les algos
 

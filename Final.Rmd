@@ -816,31 +816,15 @@ df_mod=feature_eng()
 var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
 #Split
 resu=creationDesData(df_mod$df,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-
+df_mod = resu$df_mod;train_data = resu$dapp;dtest = resu$dtest
 
 # base rose
 
-df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
-resu=creationDesData(df_mod,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp
-
+dapp <- ROSE(match ~ ., data = train_data, seed = 1)$data
 ```
 
 ```{r} 
 library(e1071)
-dapp = train_data
-dtest = test_data
-
-#ctrl <- trainControl(method = "repeatedcv",number = 10,repeats = 3,summaryFunction = f1,search = "grid")
-
-#tune_grid <- expand.grid(C=c(0.001,0.01,0.1,1), sigma = 1)
-
-#mod.svm <- caret::train(match ~., data = dapp, method = "svmRadial",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "YeoJohnson"), metric = "F1")
-
-
-#mod.svm <- svm(match~.,data=dapp,kernel="polynomial", cost=1)
-#mod.svm <- svm(match~.,data=dapp,kernel="linear", cost=100)
 tune.out <- tune(svm,match~.,data=dapp,kernel="polynomial",ranges=list(cost=c(0.1,1,10),gamma=0.1))
 summary(tune.out)
 mod.svm<-tune.out$best.model
@@ -1132,6 +1116,8 @@ points(f1_eval3$F1)
 ```
 
 
+
+
 # Intelligence artificielle
 
 L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
@@ -1192,7 +1178,7 @@ f1_m=function(y_TRUE, y_pred){
   beta = 1
   precision = precision_m(y_TRUE, y_pred)
   recall = recall_m(y_TRUE, y_pred)
-  return((1+beta)^2*((precision*recall)/(precision+beta * recall+k_epsilon())))
+  return((1+beta^2)*((precision*recall)/(precision+beta * recall+k_epsilon())))
 } 
 ```
 
@@ -1310,6 +1296,7 @@ model %>% compile(
   metrics = 'accuracy'
   
 )
+
 history <- model %>% fit(
   xtrain,  ytrain, 
   
@@ -1362,58 +1349,35 @@ var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1) # on 
 #Split
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-
 #base normale
-
 dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
 dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
 ncol = ncol(dapp) - 1 
 xtrain_normal = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
 ytrain_normal = dapp$match
-
-
 xtest_normal = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest_normal = dtest$match
-
 # base rose
-
-df_mod <- ROSE(match ~ ., data = df_mod, seed = 1)$data
-resu=creationDesData(df_mod,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-
-dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
-dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
-
+dapp <- ROSE(match ~ ., data = train_data, seed = 1)$data
+dapp = data.frame(lapply(dapp, function(x) as.numeric(as.character(x))))
 ncol = ncol(dapp) - 1 
 xtrain_rose = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
 ytrain_rose = dapp$match
-Xtest_rose = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
-Ytest_rose = dtest$match
 ```
 
 ## Resultat avec Rose
 ```{r, include = FALSE}
 # creation du modèle
-
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
-  layer_dense(units = ncol,  activation = "relu") %>%
   layer_dropout(0.3)  %>%
-  layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-  layer_dropout(0.2)  %>%
+  layer_dense(units = round(ncol*0.7), activation = "sigmoid") %>%
+  layer_dropout(0.3)  %>%
   layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
-  layer_dropout(0.1)  %>%
+  layer_dropout(0.3)  %>%
   layer_dense(units = 1, activation = "sigmoid")
-
-
-
 # compilation, apprentissage et prédiction
-
 model %>% compile(
   loss = 'binary_crossentropy',
   optimizer = 'adam',#optimizer_rmsprop()
@@ -1421,16 +1385,13 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_rose,  ytrain_rose, 
-  batch_size =0.1,epochs = 200,
+  batch_size =0.1,epochs = 500,
   validation_split = 0.1
 )
-
 ```
 
 ```{r,echo=TRUE}
-
 plot(history)
-
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
@@ -1443,16 +1404,11 @@ On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile
 
 ```{r,echo=TRUE}
 # méthode Rose
-
-model_rose = load_model_hdf5("Modelisation/IA/model_f1_rose_41365_2.hdf5")
-
-l = seq(0.05,0.95,0.01)
+model_rose = load_model_hdf5("Modelisation/IA/m_38_rose.hdf5")
+l = seq(0.3,0.7,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_rose,xtrain_normal)>s), ytrain_normal, positive = "1"))
-
-
 meilleur_seuil_rose = l[which.max(f1_list)]
 f1_rose = f1_list[which.max(f1_list)]
-
 predSimple = as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 ```
@@ -1469,26 +1425,13 @@ var_signif=feature_selection(df_mod$df,df_mod$var_num,df_mod$var_qual,0.1)
 #Split
 resu=creationDesData(df_mod$df,var_signif)
 df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-
-
 # base oversampling
-
-df_mod <- ovun.sample(match ~ ., data = df_mod, method = "over",N = 2*(nrow(df_mod) - sum(as.numeric(df_mod$match)-1)))$data
-
-table(df_mod$match)
-
-
-resu=creationDesData(df_mod,var_signif)
-df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
-
-dapp = data.frame(lapply(train_data, function(x) as.numeric(as.character(x))))
-dtest = data.frame(lapply(test_data, function(x) as.numeric(as.character(x))))
-
+dapp <- ovun.sample(match ~ ., data = train_data, method = "over",N = 2*(nrow(df_mod) - sum(as.numeric(df_mod$match)-1)))$data
+table(dapp$match)
+dapp = data.frame(lapply(dapp, function(x) as.numeric(as.character(x))))
 ncol = ncol(dapp) - 1 
 xtrain_over = as.matrix(dapp[, -which(names(dapp) %in% c("match"))])
 ytrain_over = dapp$match
-Xtest_over = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
-Ytest_over = dtest$match
 ```
 
 ## Résultat avec oversampling
@@ -1496,21 +1439,14 @@ Ytest_over = dtest$match
 ```{r, include = FALSE}
 model <- keras_model_sequential()
 model %>% 
-  layer_dense(units = ncol, input_shape = c(ncol), activation = "sigmoid") %>%
-  layer_dense(units = ncol,  activation = "relu") %>%
+  layer_dense(units = round(ncol*0.5), input_shape = c(ncol), activation = "sigmoid") %>%
   layer_dropout(0.3)  %>%
   layer_dense(units = round(ncol*0.5), activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.5), activation ="relu") %>%
-  layer_dropout(0.2)  %>%
-  layer_dense(units = round(ncol*0.3),  activation = "sigmoid") %>%
-  layer_dense(units = round(ncol*0.3), activation ="relu") %>%
-  layer_dropout(0.1)  %>%
+  layer_dropout(0.3)  %>%
+  layer_dense(units = round(ncol*0.15),  activation = "sigmoid") %>%
+  layer_dropout(0.3)  %>%
   layer_dense(units = 1, activation = "sigmoid")
-
-
-
 # compilation, apprentissage et prédiction
-
 model %>% compile(
   loss = 'binary_crossentropy',
   optimizer = 'adam',
@@ -1521,19 +1457,14 @@ history <- model %>% fit(
   batch_size =0.1,epochs = epochs,
   validation_split = 0.1
 )
-
 ```
 
 ```{r,echo=TRUE}
-
 plot(history)
-
 #prédiction sur l'échantillon test
 predSimple <- model %>% predict_classes(xtest_normal)
 #print(table(predSimple))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-
-
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
@@ -1542,54 +1473,23 @@ Les résultats sont excellents avec cette méthode même avec des epochs faibles
 ## Meilleurs modèles avec la méthode de suréchantillonage :
 
 
-Voici un modèle trouvée à 200 epochs, il va permettre de complémenter le modèle à 700 epochs pour la suite du code
+Modèle à 500 epochs :
 ```{r}
-model_over_1 = load_model_hdf5("Modelisation/IA/model_f1_over_5008_2.hdf5")
-
+model_over_1 = load_model_hdf5("Modelisation/IA/m_380_over.hdf5")
 l = seq(0.05,0.9,0.01)
 f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
-
-
 meilleur_seuil_over_1 = l[which.max(f1_list)]
 f1_over_1 = f1_list[which.max(f1_list)]
 ```
 ```{r,echo=TRUE}
-
 print("prediction avec le meilleur seuil de f1_score")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-
 print("prédiction avec le seuil standard de 0.5")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-
 ```
 
-## Meilleurs modèles avec la méthode de suréchantillonage :
-
-Meilleur modèle tout confondu trouvée avec un F1-score de 0.5737 avec le meilleur score trouvé pour maximiser le F1-score sur la base d'entrainement et un F1-score de 0.5752 avec le seuil standard de 0.5. Le nombre d'epochs est de 700.
-
-```{r}
-model_over_2 = load_model_hdf5("Modelisation/IA/model_f1_over_5752_2.hdf5")
-
-l = seq(0.05,0.9,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_2,xtrain_normal)>s), ytrain_normal, positive = "1"))
-
-
-meilleur_seuil_over_2 = l[which.max(f1_list)]
-f1_over_2 = f1_list[which.max(f1_list)]
-```
-```{r,echo=TRUE}
-
-print("prediction avec le meilleur seuil de f1_score")
-predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-
-print("prédiction avec le seuil standard de 0.5")
-predSimple = as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-
-```
 
 ## Combinaison de modèles IA
 
@@ -1597,16 +1497,14 @@ Nous avons vu que les modèles les plus performants utilisés une méthode de r�
 
 ## Vote à la majorité
 
-Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_over_2" seul.
+Ici un vote à la majorité avec les meilleurs IA : 2 suréchantillonage et 1 Rose. On obtient un F1_score de 0.5732 ce qui est sensiblement pareil que le F1_score de "model_poids" seul.
 ```{r}
 predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>0.5)
                         +as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
-                        +as.integer(predict_proba(model_over_2,xtest_normal)>0.5)
+                        +as.integer(predict_proba(model_poids,xtest)>0.5)
                         >1.5)
-
 ```
 ```{r,echo=TRUE}
-
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
@@ -1618,12 +1516,10 @@ On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents 
 ```{r}
 predSimple = as.integer(as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
                         +as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
-                        +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
+                        +as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
                         >1.5)
 ```
 ```{r,echo=TRUE}
-
-
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
@@ -1634,54 +1530,12 @@ Maintenant, on utilise les probabilité données par les IA en les pondérant en
 
 ```{r}
 # avec pondération sur les probas : 3 modèles
-
 score =  (f1_rose*predict_proba(model_rose,xtest_normal)
                         + f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_rose+f1_over_1+f1_over_2)
-
+                        + f1_poids*predict_proba(model_poids,xtest_normal))/(f1_rose+f1_over_1+f1_poids)
 predSimple = as.integer(score>0.5)
 ```
 ```{r,echo=TRUE}
-
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
-```
-
-## Prise des deux modèles over avec vote
-
-On refait maintenant le même travail mais avec juste que les deux IA de suréchantillonage (les deux meilleurs et qui se complémentent bien en fonction de leur précision et sensitivité). On trouve un modèle incroyable en faisant un vote à la majorité avec un F1_score de 0.6065, une accuracy d'environ 87% et une sensitivité forte permettant de trouver des bons matchs.
-```{r}
-predSimple = as.integer(as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
-                        +as.integer(predict_proba(model_over_2,xtest_normal)>meilleur_seuil_over_2)
-                        >1)
-
-```
-```{r,echo=TRUE}
-
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
-```
-
-## Prise des deux modèles over avec proba
-
-
-Ici, on utilise la pondération des probabilités comme vu précédemment mais avec que les deux modèles de suréchantillonage. On trouve un modèle avec un meilleur F1_score avec 0.6091 cependant l'accuracy est moins bonne ce qui est fait peut-être de ce modèle un moins bonne modèle.
-
-
-```{r}
-#  : 2 modèles : f1_score de 0.6091 >> meilleur modele a ce jour mais moins bonne précision
-
-score = (f1_over_1*predict_proba(model_over_1,xtest_normal)
-                        + f1_over_2*predict_proba(model_over_2,xtest_normal))/(f1_over_1+f1_over_2)
-
-
-predSimple = as.integer(score>0.5)
-
-```
-
-```{r,echo=TRUE}
-
-
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```

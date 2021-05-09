@@ -47,9 +47,49 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
     + centres d'intérêts des individus (cinéma, sport, etc...)
 // Eventuellement compléter
 
-## Visualisation
+## Visualisation & Statistiques descriptives
 
-// Mettre des images de ce qui a été fait et qques explications
+* Corrélation : Les activités pratiquées par les femmes
+<center>
+  <img src="img/cor1.png" style="vertical-align: middle;" width = "500"/>
+</center>
+
+## Visualisation & Statistiques descriptives
+
+* Corrélation : Les activités pratiquées par les hommes
+<center>
+  <img src="img/cor2.png" style="vertical-align: middle;" width = "500"/>
+</center>
+
+## Visualisation & Statistiques descriptives
+
+* Corrélation : Ce que les personnes du même sexe qu'elle recherche
+<center>
+  <img src="img/cor3.png" style="vertical-align: middle;" width = "500"/>
+</center>
+
+## Visualisation & Statistiques descriptives
+
+* Corrélation : Rapport de corrélation entre les variables quantitatives et la variable réponse
+<center>
+  <img src="img/rapp_cor.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
+## Visualisation & Statistiques descriptives
+
+* Significativité : Test de Student pour chaque variable quantitative et la variable réponse
+<center>
+  <img src="img/student_test.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
+## Visualisation & Statistiques descriptives
+
+* Corrélation : V de Cramer pour chaque variable qualitative avec la variable réponse
+<center>
+  <img src="img/Vcramer.png" style="vertical-align: middle;" width = "700"/>
+</center>
+
+
 
 # Critères de performance
 ## Critères de performance
@@ -86,8 +126,62 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 
 * Regression Logistique normale inadaptée
 
-# Modèle de Theo ??
-## Modèle de Theo ??
+# Régression de Lasso : 4 modèles
+## Régression de Lasso : Sans sampling
+
+* Optimisation de l'hyper-paramètre Lambda
+<center>
+  <img src="img/reg_norm.png" style="vertical-align: left;" width = "700"/>
+</center>
+
+## Régression de Lasso : Sans sampling
+
+* Résultats obtenus
+<center>
+  <img src="img/reg_norm_res.png" style="vertical-align: left;" width = "400"/>
+</center>
+
+## Régression de Lasso : Avec Rose
+
+* Optimisation de l'hyper-paramètre Lambda
+<center>
+  <img src="img/reg_norm.png" style="vertical-align: left;" width = "700"/>
+</center>
+
+## Régression de Lasso : Avec Rose
+
+* Résultats obtenus
+<center>
+  <img src="img/reg_rose_res.png" style="vertical-align: left;" width = "400"/>
+</center>
+
+## Régression de Lasso : Avec Over-Sampling
+
+* Optimisation de l'hyper-paramètre Lambda
+<center>
+  <img src="img/reg_over.png" style="vertical-align: left;" width = "700"/>
+</center>
+
+## Régression de Lasso : Avec Over-Sampling
+
+* Résultats obtenus
+<center>
+  <img src="img/reg_over_res.png" style="vertical-align: left;" width = "400"/>
+</center>
+
+## Régression de Lasso : Avec Under-Sampling
+
+* Optimisation de l'hyper-paramètre Lambda
+<center>
+  <img src="img/reg_under.png" style="vertical-align: left;" width = "700"/>
+</center>
+
+## Régression de Lasso : Avec Under-Sampling
+
+* Résultats obtenus
+<center>
+  <img src="img/reg_under_res.png" style="vertical-align: left;" width = "400"/>
+</center>
 
 # SVM
 ## SVM

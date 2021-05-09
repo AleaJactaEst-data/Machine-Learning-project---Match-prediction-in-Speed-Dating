@@ -93,6 +93,16 @@ Notre objectif dans ce projet est de nous mettre à la place d'une start-up voul
 ## SVM
 
 # XGBOOST
+Dans cette partie on va s'intérésser à une méthode de modélisatioin utilisant l'aggrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :
+
+** le nombre d'itération du boosting
+** la profondeur maximale des arbres 
+** le pas de descente de gradient
+** le pourcentage de variable qu'on garde pour la construton de chaque arbre
+** la taille des sous-échantillons
+** le gain minimum pour diviser un noeud
+
+Afin d'optimiser ces hyperparamètres, nous utiliserons comme métric le F1-score. De plus, nous comparerons les performance de notre modèle avec et sans méthode de ré-échantillonage
 ## XGBOOST
 
 # Intelligence artificielle

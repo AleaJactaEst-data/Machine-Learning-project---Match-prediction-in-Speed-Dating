@@ -18,6 +18,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
+<center>
+  <img src="img/speed_dat_img.jpg" style="vertical-align: middle;" width = "500"/>
+</center>
+
 ## Table des matières
 
 * Présentation du jeu de données

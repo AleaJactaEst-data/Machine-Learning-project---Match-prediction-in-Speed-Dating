@@ -2,12 +2,7 @@
 title: "Dating_data : la data qui vous date"
 author: "Florian JACTA, Hugo MICCINILLI, Theo DI PIAZZA, Aboa BOUADOU, Linh NGUYEN"
 date: "26/03/2021"
-#output: html_document
-output:
-  revealjs::revealjs_presentation:
-    theme: league
-    transition: fade
-    slideNumber : TRUE
+output: html_document
 ---
 
 ```{r setup, include=FALSE}

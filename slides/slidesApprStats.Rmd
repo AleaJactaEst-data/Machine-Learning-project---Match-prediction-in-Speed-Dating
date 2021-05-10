@@ -470,7 +470,7 @@ Hyperparamètres : ${\gamma}$
 
 ## Quelques mots pour comparer les algos
 
-* Essai de combinaisaon des modèles entre IA et XGBoost
+* Essai de combinaison des modèles entre IA et XGBoost
   + Vote à la majorité avec pondération et choix des meilleurs score pour maximiser le F1_score
 
 <center>

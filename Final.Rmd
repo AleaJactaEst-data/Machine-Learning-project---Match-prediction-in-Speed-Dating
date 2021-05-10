@@ -1594,8 +1594,9 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 ```
 
 
+
 ## Combinaison de modèles IA
-Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancer le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
+Nous avons vu pleins de méthodes pour contrer le déséquilibre des classes et les méthodes rééchantillonages paraissent vraiment adéquates. Nous allons maintenant essayer de combiner les meilleurs modèles soient les modèles avec IA et XGBoost afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué un vote à la majorité oen pondérant ces résultats par rapport aux meilleurs F1_score. Les meilleurs seuils seront aussi utilisé à chaque fois pour maximiser le F1_score.
 
 
 ## Vote à la majorité et meilleur seuil

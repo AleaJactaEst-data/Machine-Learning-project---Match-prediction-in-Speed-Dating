@@ -866,7 +866,7 @@ mod.svm.rad<-tune.out.rad$best.model
 pred.svm.rad = predict(mod.svm.rad, newdata = dtest)
 print(caret::confusionMatrix(data=pred.svm.rad,reference=dtest$match,positive="1"))
 
-ggplot(data.frame(tune.out.rad$performances[,-3]))+geom_point(aes(log(cost),error))+geom_line(aes(log(cost),error))+labs(title = "Erreur en fonction de log(cout)")
+ggplot(data.frame(tune.out.rad$performances[,-3]))+geom_point(aes(log(cost),dispersion))+geom_line(aes(log(cost),dispersion))+labs(title = "Erreur en fonction de log(cout)")
 
 ```
 Le meilleur valeur pour C est 0.1 et pour gamma est 0.01. Pour ce modèle de SVM radial, 70.6% des rencontres sont correctement prédites et 53% des rencontres match et 74% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 

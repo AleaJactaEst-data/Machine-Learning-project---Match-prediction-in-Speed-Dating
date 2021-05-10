@@ -389,8 +389,10 @@ Hyperparamètres : ${\gamma}$
   + 3 couches (139, 97, 42)
   + Fonction d'activation : sigmoid
   + Fonction de perte : focal loss
+  + gamma = 2
 
 ## Méthode : Fonction de perte "focal loss"
+
 
 <center>
   <img src="img/Perf_focal.png" style="vertical-align: middle;" width = "300"/>
@@ -420,7 +422,7 @@ Hyperparamètres : ${\gamma}$
 ## Méthode ROSE
 
 * Autres méthodes ? Rééchantillonage ROSE
-* Avantage : retomber sur un cas classique d'un porblème équilibré
+* Avantage : retomber sur un cas classique d'un problème équilibré
 * Architecture :
   + 3 couches (139, 97, 42)
   + Fonction d'activation : sigmoid

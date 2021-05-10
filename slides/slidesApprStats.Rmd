@@ -380,7 +380,7 @@ Les hyperparamètres à optimiser sont :
   <img src="img/Focal_loss.png" style="vertical-align: middle;" width = "300"/>
 </center>
 
-Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
+Hyperparamètres : ${\gamma}$
 
     
 ## Méthode : Fonction de perte "focal loss"

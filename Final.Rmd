@@ -1177,7 +1177,7 @@ k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit <- caret::train(match ~., data = train_data, method = "xgbTree",trControl=ctrl,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit)
 # Testing
-f1_eval=t(best_f1(rf_fit,test_data))
+f1_eval=as.data.frame(t(best_f1(rf_fit,test_data)))
 test_model(test_data,rf_fit,f1_eval$seuil[which.max(f1_eval$F1)])
 
 #XGBOOST Sur -echantillonnage
@@ -1185,7 +1185,7 @@ k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit_up <- caret::train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_up,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit_up)
 # Testing
-f1_eval2=t(best_f1(rf_fit_up,test_data))
+f1_eval2=as.data.frame(t(best_f1(rf_fit_up,test_data)))
 #plot(f1_eval2$seuil,f1_eval2$F1)
 test_model(test_data,rf_fit_up,f1_eval2$seuil[which.max(f1_eval2$F1)])
 
@@ -1194,14 +1194,14 @@ k<<-0;pb<<-txtProgressBar(style = 3,width = 50)
 rf_fit_down <- caret::train(match ~., data = train_data, method = "xgbTree",trControl=ctrl_down,tuneGrid = tune_grid,tuneLength = 10,preProcess = c("scale", "center"),metric = "F1")
 plot(rf_fit_down)
 # Testing
-f1_eval3=t(best_f1(rf_fit_down,test_data))
+f1_eval3=as.data.frame(t(best_f1(rf_fit_down,test_data)))
 #plot(f1_eval3$seuil,f1_eval3$F1)
 test_model(test_data,rf_fit_down,f1_eval3$seuil[which.max(f1_eval3$F1)])
 
 #Comaraison
-f1_eval=as.data.frame(f1_eval);f1_eval$methode="normal"
-f1_eval2=as.data.frame(f1_eval2);f1_eval2$methode="sur-échantillonnage"
-f1_eval3=as.data.frame(f1_eval3);f1_eval3$methode="sous-échantillonnage"
+f1_eval$methode="normal"
+f1_eval2$methode="sur-échantillonnage"
+f1_eval3$methode="sous-échantillonnage"
 
 comparaison = bind_rows(f1_eval,f1_eval2,f1_eval3)
 ggplot(comparaison, aes(x=seuil,y=F1,color=methode))+geom_line()+ggtitle("Comparaison des algorithme xgboost")

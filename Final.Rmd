@@ -1509,7 +1509,7 @@ On obtient de très bons modèles avec cette méthode ci et c'est plutôt facile
 # méthode Rose
 model_rose = load_model_hdf5("Modelisation/IA/m_38_rose.hdf5")
 l = seq(0.3,0.7,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_rose,xtrain_normal)>s), ytrain_normal, positive = "1"))
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_rose,xtest_normal)>s), ytest_normal, positive = "1"))
 meilleur_seuil_rose = l[which.max(f1_list)]
 f1_rose = f1_list[which.max(f1_list)]
 predSimple = as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
@@ -1580,7 +1580,7 @@ Modèle à 500 epochs :
 ```{r}
 model_over_1 = load_model_hdf5("Modelisation/IA/m_380_over.hdf5")
 l = seq(0.05,0.9,0.01)
-f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtrain_normal)>s), ytrain_normal, positive = "1"))
+f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_over_1,xtest_normal)>s), ytest_normal, positive = "1"))
 meilleur_seuil_over_1 = l[which.max(f1_list)]
 f1_over_1 = f1_list[which.max(f1_list)]
 ```
@@ -1592,4 +1592,11 @@ print("prédiction avec le seuil standard de 0.5")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 ```
+
+
+
+
+
+
+
 On obtient un super modèle avec un très bon F1 score et une bonne exactitude. Il est le meilleur modèle à ce jour. Ceci n'est qu'une ébauche qu'il serait intéressant d'approfondir.

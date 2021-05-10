@@ -1208,9 +1208,9 @@ L'intelligence artificielle est une outif très puissant pour la classification 
 
 ```{r, include=FALSE}
 # vous pouvez choisir le nombre d'epochs que vous voulez (plus d'epochs plus lent)
-# ne pas dépassez 700 environ pour éviter le surapprentissage
+# ne pas dépassez 2000 environ pour éviter le surapprentissage
 
-epochs = 200
+epochs = 500
 ```
 
 
@@ -1240,7 +1240,7 @@ ytrain = dapp$match
 xtest = as.matrix(dtest[, -which(names(dtest) %in% c("match"))])
 ytest = dtest$match
 
-#Redéfinition des metric pour l'IA
+#Definition des metric pour l'IA
 
 recall_m=function(y_TRUE, y_pred){
   TRUE_positives = k_sum(k_round(k_clip(y_TRUE * y_pred, 0, 1)))
@@ -1270,7 +1270,7 @@ La fonction de perte focal_loss est connue pour s'occuper de données non équil
 
 
 
-```{r, include = FALSE}
+```{r, results='hide'}
 
 #Optimisation de gamma
 
@@ -1330,8 +1330,9 @@ model %>% compile(
 history <- model %>% fit(
   xtrain,  ytrain, 
   
-  batch_size =0.05,epochs = 700,
-  validation_split = 0.2
+  batch_size =0.05,epochs = 2*epochs,# a besoin de plus d'epochs que les autres
+  validation_split = 0.2,
+  view_metrics = FALSE
 )
 
 ```
@@ -1357,7 +1358,7 @@ Les résultats sont assez mauvais, le problème étant que le modèle est très 
 
 On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
-```{r, include = FALSE}
+```{r, results='hide'}
 
 # poids
 
@@ -1387,7 +1388,8 @@ history <- model %>% fit(
   
   batch_size =0.05,epochs = epochs,
   validation_split = 0.2,
-  class_weight=list("0"=1,"1"=6.0284857571)
+  class_weight=list("0"=1,"1"=6.0284857571),
+  view_metrics = FALSE
 )
 ```
 
@@ -1415,7 +1417,7 @@ f1_list = sapply(l, function(s) F1_Score(as.integer(predict_proba(model_poids,xt
 meilleur_seuil_poids = l[which.max(f1_list)]
 f1_poids = f1_list[which.max(f1_list)]
 
-
+print("prédiction avec le seuil standard de 0.5")
 predSimple = as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
 print("prédiction avec le seuil standard de 0.5")
@@ -1454,7 +1456,7 @@ ytrain_rose = dapp$match
 ```
 
 ## Resultat avec Rose
-```{r, include = FALSE}
+```{r,  results='hide'}
 # creation du modèle
 model <- keras_model_sequential()
 model %>% 
@@ -1473,8 +1475,9 @@ model %>% compile(
 )
 history <- model %>% fit(
   xtrain_rose,  ytrain_rose, 
-  batch_size =0.1,epochs = 500,
-  validation_split = 0.1
+  batch_size =0.1,epochs = epochs,
+  validation_split = 0.1,
+  view_metrics = FALSE
 )
 ```
 
@@ -1524,7 +1527,7 @@ ytrain_over = dapp$match
 
 ## Résultat avec oversampling
 
-```{r, include = FALSE}
+```{r,  results='hide'}
 model <- keras_model_sequential()
 model %>% 
   layer_dense(units = round(ncol*0.5), input_shape = c(ncol), activation = "sigmoid") %>%
@@ -1587,20 +1590,27 @@ Nous avons vu pleins de méthodes pour contrer le déséquilibre des classes et 
 ## Vote à la majorité et meilleur seuil
 On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents meilleurs seuils qui maximisent le F1_score que nous avons trouvé précédemmen.On trouve ici un F1_score de 0.5928 ce qui est le meilleur modèle pour l'instant trouvé.
 ```{r}
-score = (f1_rose * as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
-                        +f1_over_1 * as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
-                        +f1_poids * as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
-+ f1_eval$F1[which.max(f1_eval$F1)] *
-  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval$seuil[which.max(f1_eval3$F1)])
-+ f1_eval2$F1[which.max(f1_eval2$F1)] * 
-  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval2$seuil[which.max(f1_eval3$F1)])
-+ f1_eval3$F1[which.max(f1_eval3$F1)] * 
-  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval3$seuil[which.max(f1_eval3$F1)]))
-  /(f1_rose+f1_over_1+f1_poids+f1_eval$F1[which.max(f1_eval$F1)]+f1_eval2$F1[which.max(f1_eval2$F1)]+f1_eval3$F1[which.max(f1_eval3$F1)])
+score = (f1_rose * 
+           as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
+        +f1_over_1 * 
+          as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
+        +f1_poids * 
+          as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
+        + f1_eval$F1[which.max(f1_eval$F1)] *
+          as.integer(data.frame(actual = test_data$match,predict(rf_fit, newdata = test_data, type = "prob"))$X0 < f1_eval$seuil[which.max(f1_eval$F1)])
+        + f1_eval2$F1[which.max(f1_eval2$F1)] * 
+          as.integer(data.frame(actual = test_data$match,predict(rf_fit_up, newdata = test_data, type = "prob"))$X0 < f1_eval2$seuil[which.max(f1_eval2$F1)])
+        + f1_eval3$F1[which.max(f1_eval3$F1)] * 
+          as.integer(data.frame(actual = test_data$match,predict(rf_fit_down, newdata = test_data, type = "prob"))$X0 < f1_eval3$seuil[which.max(f1_eval3$F1)]))/(f1_rose
+    +f1_over_1
+    +f1_poids
+    +f1_eval$F1[which.max(f1_eval$F1)]
+    +f1_eval2$F1[which.max(f1_eval2$F1)]
+    +f1_eval3$F1[which.max(f1_eval3$F1)])
 
 
 
-l = seq(0.05,0.9,0.01)
+l = seq(0.05,0.9,0.001)
 f1_list = sapply(l, function(s) F1_Score(as.integer(score>s), ytest, positive = "1"))
 meilleur_seuil_combi = l[which.max(f1_list)]
 f1_combi = f1_list[which.max(f1_list)]
@@ -1608,10 +1618,11 @@ f1_combi = f1_list[which.max(f1_list)]
 predSimple = as.integer(score > meilleur_seuil_combi)
 ```
 ```{r,echo=TRUE}
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
-print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),positive="1"))
 ```
 
 
 
 On obtient un super modèle avec un très bon F1 score et une bonne exactitude. Il est le meilleur modèle à ce jour. Ceci n'est qu'une ébauche qu'il serait intéressant d'approfondir.
+

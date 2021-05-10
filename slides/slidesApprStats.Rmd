@@ -479,3 +479,9 @@ Hyperparamètres : ${\gamma}$
 
 # Conclusion
 ## Conclusion
+
+* Projet compliqué mais très intéressant
+  + car beaucoup de variables très peu corréles
+  + déséquilibre
+* Peut-être moyen de trouver mieux avec IA et combinaison de modèle
++ Application R-Shiny

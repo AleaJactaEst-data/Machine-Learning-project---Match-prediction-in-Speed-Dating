@@ -1594,8 +1594,37 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 ```
 
 
+## Combinaison de modèles IA
+Nous avons vu que les modèles les plus performants utilisés une méthode de ré échantillonage pour contre balancer le déséquilibre des classes avec tout de même mentions honorables à l'IA qui se sert de poids sur les classes sans rééchantillonage. Nous allons maintenant essayer de combiner ces modèles afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué des vote à la majorité ou sommer les probabilités données par les IA ou même pondéré ces résultats par rapport aux meilleurs F1_score qu'ils trouvent sur la base d'apprentissage. Le modèle avec le poids ne sera pas utilisé car trop mauvais comparé aux autres. Nous allons au plus combiné les 2 IA de suréchantillonage et l'IA d'échantillonage Rose.
 
 
+## Vote à la majorité et meilleur seuil
+On fait ce même vote à la majorité avec les 3 mêmes IA mais les différents meilleurs seuils qui maximisent le F1_score que nous avons trouvé précédemmen.On trouve ici un F1_score de 0.5928 ce qui est le meilleur modèle pour l'instant trouvé.
+```{r}
+score = (f1_rose * as.integer(predict_proba(model_rose,xtest_normal)>meilleur_seuil_rose)
+                        +f1_over_1 * as.integer(predict_proba(model_over_1,xtest_normal)>meilleur_seuil_over_1)
+                        +f1_poids * as.integer(predict_proba(model_poids,xtest)>meilleur_seuil_poids)
++ f1_eval$F1[which.max(f1_eval$F1)] *
+  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval$seuil[which.max(f1_eval3$F1)])
++ f1_eval2$F1[which.max(f1_eval2$F1)] * 
+  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval2$seuil[which.max(f1_eval3$F1)])
++ f1_eval3$F1[which.max(f1_eval3$F1)] * 
+  as.integer(data.frame(actual = test_data$match,predict(model, newdata = test_data, type = "prob"))$X0 > f1_eval3$seuil[which.max(f1_eval3$F1)]))
+  /(f1_rose+f1_over_1+f1_poids+f1_eval$F1[which.max(f1_eval$F1)]+f1_eval2$F1[which.max(f1_eval2$F1)]+f1_eval3$F1[which.max(f1_eval3$F1)])
+
+
+
+l = seq(0.05,0.9,0.01)
+f1_list = sapply(l, function(s) F1_Score(as.integer(score>s), ytest, positive = "1"))
+meilleur_seuil_combi = l[which.max(f1_list)]
+f1_combi = f1_list[which.max(f1_list)]
+
+predSimple = as.integer(score > meilleur_seuil_combi)
+```
+```{r,echo=TRUE}
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
+print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
+```
 
 
 

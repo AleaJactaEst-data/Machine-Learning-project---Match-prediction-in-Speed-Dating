@@ -121,7 +121,7 @@ f1 <- function (data, lev = NULL, model = NULL) {
 
 # Présentation de la base
 
-Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notament pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
+Pour ce projet, nous avons voulu aborder un thème qui nous tient à coeur : l'amour. Pour cela, nous avons récupéré les données issues d'une étude réalisée entre 2002 et 2004 par la Columbia Business School sur des individus hétérosexuels. Cette étude avait notamment pour objectif d'étudier les facteurs pouvant influencer le match (fait que deux individus veuillent sortir ensemble).
 
 ## Présentation de la base
 
@@ -132,16 +132,16 @@ Pendant les événements, les participants ont un «premier rendez-vous» de qua
 L'ensemble de données comprend également des données de questionnaire recueillies auprès des participants à différents moments du processus. Ces domaines comprennent: la démographie, les habitudes de rencontres, la perception de soi à travers les attributs clés, les croyances sur ce que les autres trouvent précieux chez un partenaire et les informations sur le mode de vie. 
 
 
-De plus, ce questionnaire a été envoyé sous plsuieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
+De plus, ce questionnaire a été envoyé sous plusieurs vagues aux participant pour voir si'il avait une évolution de leur perception d'eux, de leurs attentes....
 
 Notre objectif dans ce projet est de nous mettre à la place d'une start-up voulant créer une application de rencontre. Pour cela nous allons utiliser les données de cette études afin que notre application mette en relation des personnes qui ont le plus de chance de se matcher. 
 
 # Preprocessing
 
-Dans un premier temps il est nécéssaire de nettoyer notre jeu de données et de le préparer pour répondre à notre problématique
+Dans un premier temps il est nécessaire de nettoyer notre jeu de données et de le préparer pour répondre à notre problématique
 
 ## Gestion des valeurs 
-Avec les fonctions ci-dessous, nous gérons les problèmes d'encodages de certaines variables et de formats
+Avec les fonctions ci-dessous, nous gérons les problèmes d'encodages de certaines variables et de formats.
 ```{r}
 # Gestion Variables
 
@@ -195,7 +195,7 @@ gestionIncome = function(df){
 ```
 
 ## #Homogénéisation systeme de points
-L'étude a été faite sur plusieur vagues et durant la notation des attribut (sincérité, intelligence...), deux systemes de notation ont été utilisés pour un même sujet. C'est pourquoi, afin d'homogéniser le systeme de points ainsi que de répondre à notre objectif, nous avons harmoniser le systeme de points puis effectuer une moyenne sur toutes les vagues pour chaque attribut concernant le meme sujet (perception de soie, attentes de son partenaire..)  
+L'étude a été faite sur plusieurs vagues et durant la notation des attributs (sincérité, intelligence...), deux systèmes de notation ont été utilisés pour un même sujet. C'est pourquoi, afin d’homogénéiser le système de points ainsi que de répondre à notre objectif, nous avons harmonisé le système de points puis effectué une moyenne sur toutes les vagues pour chaque attribut concernant le meme sujet (perception de soie, attentes de son partenaire..)  
 ```{r}
 agregationVariable = function(df){
   df2=df
@@ -236,7 +236,7 @@ agregationVariable = function(df){
 ```
 
 ## Aggregation
-Certaines variables qualitatives disposait d'un grands nombre de madalité (parfois 17) c'est pourquoi pour certaines d'entres elles, nous avons créé une nouvelles variables qui les reprends en aggrégeant certaines de leurs modalité.
+Certaines variables qualitatives disposaient d'un grand nombre de madalité (parfois 17) c'est pourquoi pour certaines d'entres elles, nous avons créé une nouvelle variable qui les reprend en aggrégeant certaines de leurs modalités.
 ```{r}
 aggregateCarrer=function(df_individu){
   #carrer_cd
@@ -317,7 +317,7 @@ gestionDesNASystematiques = function(df_individu){
 ```
 
 ## Creation des couples
-Cette fonctions va nous permettre de créer notre base couple finale en faisant en sorte qu'un couple n'apparaissent qu'une fois et que les informations des deux partenaire soient présents pour chaque ligne. Les variable se terinant par .x désignent celles relatives aux femmes et par .y celles relaives aux hommes
+Cette fonction va nous permettre de créer notre base couple finale en faisant en sorte qu'un couple n'apparaissent qu'une fois et que les informations des deux partenaires soient présents pour chaque ligne. Les variables se terminant par .x désignent celles relatives aux femmes et par .y celles relaives aux hommes
 ```{r}
 creationDf_Couple = function(df,df_individu){
   df_couple_id = df[,c('iid','pid', 'match',"gender")]
@@ -350,7 +350,7 @@ creationDf_Couple = function(df,df_individu){
 ```
 
 ## Fonction du prepocessing
-Enfin nous avons définit un fonction qui fait appelles à celles dont nous venons d'évoquer plus haut.
+Enfin nous avons défini une fonction qui fait appel à celles dont nous venons d'évoquer plus haut.
 ```{r}
 importation=function(){
   pb=txtProgressBar(style = 3,width = 50)
@@ -401,10 +401,10 @@ importation=function(){
 ```
 
 # Feature engineering
-Une fois que nous avons notre base couple, nous avons fait quelques création de nouvelles variables.
+Une fois que nous avons eu notre base couple, nous avons fait quelques créations de nouvelles variables.
 
 ## Variables quantitatives
-Dans cette partie, nous créeons plusieurs variables afin de mettre en lien les variables des hommes et des femmes comme des variables disatnces qui calcule la disatnce/norme entre les activié des hommes et des femmes.
+Dans cette partie, nous créons plusieurs variables afin de mettre en lien les variables des hommes et des femmes comme des variables distances qui calculent la distance/norme entre les activités des hommes et des femmes.
 ```{r}
 creation_avg_ect=function(df_couple2){
   var_num=c("act_sortie","act_casanier","act_autre","act_art","act_sports","age","imprace","imprelig",
@@ -457,7 +457,7 @@ creation_avg_ect=function(df_couple2){
 ```
 
 ## Variables qualitatives
-Dans cette partie,nous créeon principalement des variables indicatrice et de comptage.
+Dans cette partie,nous créons principalement des variables indicatrices et de comptages.
 ```{r}
 creation_same_ind=function(df_couple2){
   
@@ -515,8 +515,6 @@ feature_eng=function(){
 feature_eng() permet de prendre notre base de donnée corrigée, transformée, vidée de ces Na, etc... Elle change des formats, met les variables en numérique et en factor, crée des variables pour diviser les variables factorielles avec beaucoup de modalités en plusieurs variables avec moins de modalités. Elle permet aussi d'enlever les symétries du modèle (une paire apparait deux fois), elle crée des variables de distance et de moyenne des variables numériques, enlève les informations que nous ne pouvons pas savoir à priori (avant le date) etc...
 
 
-
-# Création de la base de donnée finale
 
 feature_selection() va permettre de donner toutes les varaiables non significatifs à partir d'un seuil. Les variables numériques et factorielles ne sont pas testées de la même façon.
 
@@ -600,7 +598,7 @@ df_mod = resu$df_mod;train_data = resu$dapp;test_data = resu$dtest
 # Statistique descriptive et visualisation
 
 Dans cette partie il s'agit d'utiliser des outils de visualisation et de statistique pour découvrir notre base de données finale, en particulier les corrélations qu'il pourrait y avoir entre les variables.
-Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitaives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
+Pour cela, nous étudierons les corrélations entre les variables quantitatives, et les éventuelles corrélations qu'il pourrait y avoir entre les variables quantitatives/qualitatives avec la variable à expliquer. Grâce au rapport de corrélation, au test de Student et le V de Cramer.
 
 
 ```{r}
@@ -748,7 +746,7 @@ filterCtrl <- sbfControl(functions = ldaSBF, method = "repeatedcv", repeats = 5)
 rfWithFilter <- sbf(match ~.,data=train_data, sbfControl = filterCtrl) 
 ```
 
-L'object rfWithFilter contient de nombreuses données mais on s'intéresse uniquement aux variables selectionnées par *sbf*. On récupère ses variables :
+L'objet rfWithFilter contient de nombreuses données mais on s'intéresse uniquement aux variables selectionnées par *sbf*. On récupère ses variables :
 ```{r}
 var_imp2 = rfWithFilter$variables$selectedVars
 var_imp2 = var_imp2[var_imp2 %in% colnames(train_data)]
@@ -810,7 +808,7 @@ La regression logistique n'est clairement pas adaptée à la prédiction pour no
 
 # SVM
 
-L'approche SVM (Support Vector Machines) cherche le meilleur hyperplan en terme de séparation des données. Dans notre cas, avec plus que 100 variables explicatives, il est très probable que les données seraient séparables et nous allons des modèles SVM non-séparable. 
+L'approche SVM (Support Vector Machines) cherche le meilleur hyperplan en terme de séparation des données. Dans notre cas, avec plus que 100 variables explicatives, il est très probable que les données ne soient pas séparables.
 
 Dans un premier temps nous testons un modèle SVM linéaire.
 ```{r}
@@ -827,7 +825,7 @@ print(caret::confusionMatrix(data=pred.svm.lin,reference=dtest$match,positive="1
 ```
 Nous obtenons des résultats pas très corrects, ce modèle a classifié toutes les rencontres comme non-match car la précision est de 0.834. Ce modèle ayant un rappel de 0 et on a trop de Faux Négatifs. 
 
-Pour corriger cet erreur, nous allons réeschantilloner la base avec la méthode Rose permetttant de rééquilibrer les classes. Cette méthode crée une base de donnée équilibré par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
+Pour corriger cet erreur, nous allons réeschantilloner la base avec la méthode Rose permetttant de rééquilibrer les classes. Cette méthode crée une base de donnée équilibrée par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
 ```{r}
 dtest = test_data
 # base rose
@@ -843,7 +841,7 @@ print(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positi
 ggplot(data.frame(tune.out.lin.rose$performances[,-3]))+geom_point(aes(log(cost),error))+geom_line(aes(log(cost),error))+labs(title = "Erreur en fonction de log(cout)")
 
 ```
-Nous obtenons un mieux modèle. Le meilleur valeur pour C est 0.1 et pour ce modèle, 66.3% des rencontres sont correctement prédites et 57% des rencontres match et 68,19% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 
+Nous obtenons un meilleur modèle. La meilleur valeur pour C est 0.1 et pour ce modèle, 66.3% des rencontres sont correctement prédites et 57% des rencontres match et 68,19% des rencontres non-match sont correctement prédites. Nous calculons le F1 score pour mesurer l'équilibre entre la précision et le rappel. 
 ```{r}
 recall = as.double(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positive="1")$byClass["Sensitivity"])
 precision = as.double(caret::confusionMatrix(data=pred.svm.lin.rose,reference=dtest$match,positive="1")$byClass["Pos Pred Value"])
@@ -852,7 +850,7 @@ f1score.lin.rose
 ```
 Le F1 score du modèle SVM linéaire est de 0.360.
 
-Ensuite on essaie le modèle SVM radial. On cherche à optimiser les paramatres de cout et de gamma.
+Ensuite on essaie le modèle SVM radial. On cherche à optimiser les parametres de cout et de gamma.
 ```{r}
 tune.out.rad <- tune(svm,match~.,data=dapp,kernel="radial",ranges=list(cost=c(.0001,.001,.01,.1),gamma=c(.01,.1,.5,1,2)))
 summary(tune.out.rad)
@@ -1040,7 +1038,7 @@ pred_over <- as.numeric(predict(lasso_mod, X_test, type="class"))
 print(caret::confusionMatrix(data=factor(pred_over),reference=factor(dtest$match),positive="1",mode = "prec_recall"))
 ```
 
-Le modèle également mieux les 1, le rappel est donc meilleur que sans travail sur l'équilibrage de jeu de données.
+Le modèle évalue également mieux les 1, le rappel est donc meilleur que sans travail sur l'équilibrage de jeu de données.
 Toutefois, l'accuracy reste faible. 
 Pour comparer, on utilise enfin un UNDER sampling.
 
@@ -1096,12 +1094,12 @@ legend("bottom",
 Meme avec un sampling les résultats obtenus ne sont pas satisfaisants : les modèles prédisent trop de 0 et le "rappel" n'est pas bon. On s'oriente donc vers d'autres modèles.
 
 # XGBOOST
-Dans cette partie on va s'intérésser à une méthode de modélisatioin utilisant l'aggrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :
+Dans cette partie on va s'intérésser à une méthode de modélisation utilisant l'agrégation par boosting. Pour cela on utiliser comme modèle de base l'arbre de décision. Les hyperparamètres à optimiser sont :
 
 ** le nombre d'itération du boosting
 ** la profondeur maximale des arbres 
 ** le pas de descente de gradient
-** le pourcentage de variable qu'on garde pour la construton de chaque arbre
+** le pourcentage de variable qu'on garde pour la construction de chaque arbre
 ** la taille des sous-échantillons
 ** le gain minimum pour diviser un noeud
 
@@ -1200,9 +1198,9 @@ ggplot(comparaison, aes(x=precision,y=rappel,color=methode))+geom_line()+ggtitle
 ```
 
 
-# Intelligence artificielle
+# Réseaux de neurones
 
-L'intelligence artificielle est une outif très puissant pour la classification binaire. Nous allons voir si cela est vrai en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standar et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
+Les réseaux de neurones est une outil très puissant pour la classification binaire. Pour réexpliquer ce qu'est un réseau de neurones, ce sont plusieurs couches de neurones connectés (ici totalement connectés) avec un couche d'entrées et une couche de sortie. Les informations vont passer dans le réseau de neurones afin d'y être transformé par de multiples combinaison et à l'aide de fonction d'activation. Par backpropagation du gradient de la fonction de perte, à chaque batch, le réseau de neurones est censé améliorer ces différents poids pour avoir de meilleurs résultats. Nous allons voir si les réseaux de neurones fonctionnent bien en faisant 4 types de modèles différents. Le premier en changeant la fonction de perte pour donner plus d'importance à la classe 1, le deuxième en mettant des poids plus important à la classe en prenant la fonction de perte standard (binary cross_entropy) et les deux dernières avec des méthodes de rééchantillonage : Rose et suréchantillonage.
 
 ## Transformation de la base de donnée pour l'intelligence artificielle
 
@@ -1268,7 +1266,10 @@ f1_m=function(y_TRUE, y_pred){
 
 La fonction de perte focal_loss est connue pour s'occuper de données non équilibrées. En prenant une valeur de gamma grande, on fait en sorte que les bonnes prédiction pour la classe 0 soit moins importantes cependant en augmantant gamma, on diminue fortement la fonction de perte ansi, au commencement même de l'entrainement, on peut avoir une fonction de perte proche de 0 et ainsi, pas efficace. Il faut donc trouver le meilleur gamma capable de donner plsu importance aux bonnes prédictions pour la classe 1 sans avoir une fonciton de perte trop petite et inutilisable.
 
+${p}_{t} = y_{pred} * y_{obs} + (1-y_{pred}) * (1-y_{obs}) $
+$FL = (1-{p}_{t})^{\gamma}-log({p}_{t})$
 
+$\gamma$ est un paramètre à optimiser
 
 ```{r, results='hide'}
 
@@ -1352,7 +1353,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 ```
 
 
-Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre faon de modéliser ce problème.
+Les résultats sont assez mauvais, le problème étant que le modèle est très instable à cause de la fonction de perte et même en changeant le gamma, on obtient encore des résultats médiocres. Passons donc à une autre facon de modéliser ce problème.
 
 ## Utilisation de poids
 

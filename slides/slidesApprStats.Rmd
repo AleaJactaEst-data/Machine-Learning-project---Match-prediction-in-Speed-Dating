@@ -38,7 +38,7 @@ knitr::opts_chunk$set(echo = TRUE)
 * Données brutes : 
     + 8379 lignes et 195 variables
     + variable à expliquer : match
-    + Variables explicatives : 73 variables de type identification
+    + Variables explicatives : 73 variables de type identification --> nettoyage
 
 <center>
   <img src="img/resume_projet.jpg" style="vertical-align: middle;" width = "500"/>
@@ -60,10 +60,10 @@ ggplot(df_speed, aes(x = match)) +
 <h1> Nettoyage du jeu de données </h1>
 
 * Gerer les problemes de codage
-* Harmonser le système de points
+* Harmonsier le système de points
 * Gestion des valeurs manquantes 
-* Suppresion de variables inutilisables pour répondre à la problématique
-* Joindre les inforations
+* Suppression de variables inutilisables pour répondre à la problématique
+* Joindre les informations
 
 <h1> Création de nouvelles variables </h1>
 * Aggréger certaines modalités des variables qualitatives

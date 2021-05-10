@@ -60,7 +60,7 @@ ggplot(df_speed, aes(x = match)) +
 <h1> Nettoyage du jeu de données </h1>
 
 * Gerer les problemes de codage
-* Harmonsier le système de points
+* Harmoniser le système de points
 * Gestion des valeurs manquantes 
 * Suppression de variables inutilisables pour répondre à la problématique
 * Joindre les informations
@@ -132,7 +132,7 @@ ggplot(df_speed, aes(x = match)) +
 * Données déséquilibrées : 84% d'exactitude en prédisant que des 0 
 * Mettre l'accent sur le taux de match détecté :
     + Precision, Sensibilité et F1-Score
-    + Ne pas négliger la performance globale
+    + Ne pas négliger la performance globale (l'exactitude)
 
 ## Critères de performance
 <center>
@@ -362,7 +362,7 @@ Les hyperparamètres à optimiser sont :
 * Réseaux de neurones : neurones d'entrées et de sortie
 * Couches de neurones cachées
 * Fonction d'activation
-* Fonction de coût
+* Fonction de perte
 
 <center>
   <img src="img/reseau.jpg" style="vertical-align: middle;" width = "500"/>
@@ -380,7 +380,7 @@ Les hyperparamètres à optimiser sont :
   <img src="img/Focal_loss.png" style="vertical-align: middle;" width = "300"/>
 </center>
 
-Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
+Hyperparamètres : ${\gamma}$
 
     
 ## Méthode : Fonction de perte "focal loss"
@@ -389,8 +389,10 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
   + 3 couches (139, 97, 42)
   + Fonction d'activation : sigmoid
   + Fonction de perte : focal loss
+  + gamma = 2
 
 ## Méthode : Fonction de perte "focal loss"
+
 
 <center>
   <img src="img/Perf_focal.png" style="vertical-align: middle;" width = "300"/>
@@ -420,7 +422,7 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 ## Méthode ROSE
 
 * Autres méthodes ? Rééchantillonage ROSE
-* Avantage : retomber sur un cas classique d'un porblème équilibré
+* Avantage : retomber sur un cas classique d'un problème équilibré
 * Architecture :
   + 3 couches (139, 97, 42)
   + Fonction d'activation : sigmoid
@@ -477,3 +479,9 @@ Hyperparamètres : ${\alpha}_t$ et ${\gamma}_t$
 
 # Conclusion
 ## Conclusion
+
+* Projet compliqué mais très intéressant
+  + car beaucoup de variables très peu corréles
+  + déséquilibre
+* Peut-être moyen de trouver mieux avec IA et combinaison de modèle
++ Application R-Shiny

@@ -362,7 +362,7 @@ Les hyperparamètres à optimiser sont :
 * Réseaux de neurones : neurones d'entrées et de sortie
 * Couches de neurones cachées
 * Fonction d'activation
-* Fonction de coût
+* Fonction de perte
 
 <center>
   <img src="img/reseau.jpg" style="vertical-align: middle;" width = "500"/>

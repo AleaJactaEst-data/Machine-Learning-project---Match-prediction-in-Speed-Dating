@@ -1584,10 +1584,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 ## Comparaison des modèles
 
 
-<center>
-  <img src="slides/img/tableau_comparaison.png" style="vertical-align: middle;" width = "800"/>
-</center>
-
+Meilleur modèle : XGBoost avec oversampling suivi de IA avec Rose puis SVM, Lasso, logistique.
 
 ## Combinaison de modèles IA
 Nous avons vu pleins de méthodes pour contrer le déséquilibre des classes et les méthodes rééchantillonages paraissent vraiment adéquates. Nous allons maintenant essayer de combiner les meilleurs modèles soient les modèles avec IA et XGBoost afin que les avantages des uns rattrapent les inconvénients des autres. Pour cela, nous allons effectué un vote à la majorité en pondérant ces résultats par rapport aux meilleurs F1_score. Les meilleurs seuils seront aussi utilisé à chaque fois pour maximiser le F1_score.

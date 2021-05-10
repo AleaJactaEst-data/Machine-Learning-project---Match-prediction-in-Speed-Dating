@@ -1357,7 +1357,7 @@ Les résultats sont assez mauvais, le problème étant que le modèle est très 
 
 ## Utilisation de poids
 
-On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy". La valeur de poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
+On va ici mettre des poids aux classes tout en utilisant la fonction de perte usuelles pour les classifieurs binaires soit la "binary crossentropy" (fonction de perte de l'exemple du cours). La valeur du poids à mettre à la classe i est juste le nombre d'indivus de la classs majoritaire divisé par le nombre d'individus de classe i. On obtient ici pour la classe 0 : 1 et pour la classe 1 : 6.0284857571. Mettons en place ce nouveau modèle :
 
 ```{r, results='hide'}
 
@@ -1428,7 +1428,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest),pos
 ```
 ## Intelligence artificielle avec méthode de Sampling : Rose
 
-Passons maintenant aux différentes méthode d'échantillonange permetttant de ré équilibré les classes et commencant par la méthode d'échantillonage ROSE. Cette méthode crée une base de donnée équilibré par des méthodes de bootstrap et d'individus artificielles. Elle donne souvent de bons résulats.
+Passons maintenant aux différentes méthode d'échantillonange permetttant de ré équilibrer les classes et commencant par la méthode d'échantillonage ROSE. Cette méthode crée une base de donnée équilibré. Elle donne souvent de bons résulats.
 
 ## Création des différentes bases nécessaires
 
@@ -1508,7 +1508,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 
 ## Intelligence artificielle avec méthode d'échantillonage : suréchantillonage
 
-Pour les mêmes raisons, on change de base.
+Pour les mêmes raisons, on change de base et on utilise de l'oversampling "simplement".
 
 Création des différentes bases nécessaires
 ```{r}
@@ -1560,7 +1560,7 @@ print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_norm
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1"))
 ```
 
-Les résultats sont excellents avec cette méthode même avec des epochs faibles. APrès à partir de 1000 epochs, les résultats sont moins bons donc il faut faire attention.
+Les résultats sont très bons avec cette méthode. Mais un peu moins performant que Rose.
 
 ## Meilleurs modèles avec la méthode de suréchantillonage :
 
@@ -1581,6 +1581,8 @@ print("prédiction avec le seuil standard de 0.5")
 predSimple = as.integer(predict_proba(model_over_1,xtest_normal)>0.5)
 print(caret::confusionMatrix(data=factor(predSimple),reference=factor(ytest_normal),positive="1",mode = "prec_recall"))
 ```
+## Comparaison des modèles
+
 
 
 

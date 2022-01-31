@@ -6,6 +6,6 @@ Le markdown complet est dans Final.Rmd et le résultat du knit est dans le fichi
 Vous trouveres le slides dans slides, c'est le fichiers .html. Utilisez le fichier .Rproj pour executer les différents codes sans problèmes au niveau des chemins.
 
 
-L'application rshiny est dans le répèrtoire Test_Match. De même pour la tester il faut d'abord ouvrir le fichier .Rproj contenue dedans pui executer le fichier app.R.
+L'application rshiny est dans le répertoire Test_Match. De même pour la tester il faut d'abord ouvrir le fichier .Rproj contenue dedans pui executer le fichier app.R.
 
 L'application se trouve ici : https://experience.shinyapps.io/DERTINE/_w_afa8efc5/#!/
